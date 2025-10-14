@@ -6,6 +6,7 @@ import sendResponse from "../../utils/sendResponse";
 
 // Create a new team
 const createTeam = async (req: Request, res: Response, next: NextFunction) => {
+
   try {
     const newTeam = await TeamService.createTeam(req.body);
     sendResponse(res, {
@@ -21,8 +22,10 @@ const createTeam = async (req: Request, res: Response, next: NextFunction) => {
 
 // Get all teams
 const getAllTeams = async (req: Request, res: Response, next: NextFunction) => {
+  console.log(req.query)
   try {
     const result = await TeamService.getAllTeams(req.query);
+    console.log(result)
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,

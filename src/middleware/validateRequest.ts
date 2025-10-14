@@ -8,6 +8,7 @@ import { ZodError, ZodObject, ZodRawShape } from "zod";
 export const validateRequest =
   (zodSchema: ZodObject<ZodRawShape>) =>
   async (req: Request, _res: Response, next: NextFunction) => {
+  
     try {
       // If body.data exists (sent as JSON string), parse it
       if (req.body?.data) {
