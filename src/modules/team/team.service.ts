@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from "http-status";
 import { Types } from "mongoose";
-import AppError from "../../errors/AppError";
 import { Team } from "./team.model";
 import { ITeam, Member } from "./team.interface";
+import AppError from "../../errors/AppError";
+import QueryBuilder from "../../utils/queryBuilder";
 
 
 // Create a new team
@@ -26,7 +27,7 @@ const createTeam = async (data: any) => {
 // Get all teams with search, filter, sort, pagination
 const getAllTeams = async (query: any) => {
   const searchableFields = ["name", "members.name"];
-  const queryBuilder = new QueryBuilder<Team>(Team.find(), query);
+  const queryBuilder = new QueryBuilder<ITeam>(Team.find(), query);
 
   const teamQuery = queryBuilder
     .search(searchableFields)
