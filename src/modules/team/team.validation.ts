@@ -1,11 +1,14 @@
-const { z } = require("zod");
+// src/modules/team/team.validation.ts
+import { z } from "zod";
 
-const memberSchema = z.object({
+// Team member schema
+export const memberSchema = z.object({
   name: z.string().min(1, "Member name required"),
   role: z.string().optional(),
 });
 
-const createTeamSchema = z.object({
+// Create team schema
+export const createTeamSchema = z.object({
   name: z.string().min(1, "Team name required"),
   description: z.string().min(1, "Description required"),
   managerApproved: z.number().optional(),
@@ -14,24 +17,18 @@ const createTeamSchema = z.object({
   members: z.array(memberSchema).optional(),
 });
 
-const updateStatusSchema = z.object({
-  teamId: z.string(),
+// Update team approval status (tri-state)
+export const updateStatusSchema = z.object({
   field: z.enum(["managerApproved", "directorApproved"]),
   value: z.number().int().min(0).max(2),
 });
 
-const orderSchema = z.object({
-  order: z.array(
+// Update team order (drag & drop)
+export const orderSchema = z.object({
+  orderList: z.array(
     z.object({
       id: z.string(),
       order: z.number(),
     })
   ),
 });
-
-module.exports = {
-  memberSchema,
-  createTeamSchema,
-  updateStatusSchema,
-  orderSchema,
-};

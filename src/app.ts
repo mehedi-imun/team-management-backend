@@ -1,7 +1,7 @@
 import cors from "cors";
 import express from "express";
-import globalErrorHandler from "./middleware/validateRequest";
 import { TeamRoutes } from "./modules/team/team.routes";
+import globalErrorHandler from "./middleware/globalErrorHandler";
 
 const app = express();
 
