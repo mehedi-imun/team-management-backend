@@ -1,8 +1,6 @@
 import cors from "cors";
 import express from "express";
 
-// import globalErrorHandler from "./middleware/globalErrorHandler";
-// import router from "./routes";
 const app = express();
 
 // Middleware
@@ -17,7 +15,7 @@ app.use(
   })
 );
 // Routes
-app.use("/api/v1");
+// app.use("/api/v1");
 // Default route for testing
 app.get("/", (_req, res) => {
   res.send("API is running");
