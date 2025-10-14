@@ -1,12 +1,13 @@
 import cors from "cors";
 import express from "express";
+import globalErrorHandler from "./middleware/validateRequest";
+import { TeamRoutes } from "./modules/team/team.routes";
 
 const app = express();
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
-
-// Rate Limiter
+app.use(express.json());
 
 app.use(
   cors({
@@ -15,13 +16,14 @@ app.use(
   })
 );
 // Routes
-// app.use("/api/v1");
+app.use("/api/v1/teams", TeamRoutes);
+
 // Default route for testing
 app.get("/", (_req, res) => {
   res.send("API is running");
 });
 
-// app.use(globalErrorHandler);
+app.use(globalErrorHandler);
 
 // 404 Handler
 app.use((req, res) => {
