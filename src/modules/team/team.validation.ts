@@ -7,20 +7,24 @@ export const memberSchema = z.object({
   role: z.string().optional(),
 });
 
+// Approval and status: "0" | "1" | "-1" (string)
+const approvalStatusEnum = z.enum(["0", "1", "-1"]);
+
 // Create team schema
 export const createTeamSchema = z.object({
   name: z.string().min(1, "Team name required"),
   description: z.string().min(1, "Description required"),
-  managerApproved: z.number().optional(),
-  directorApproved: z.number().optional(),
+  status: approvalStatusEnum.optional(),
+  managerApproved: approvalStatusEnum.optional(),
+  directorApproved: approvalStatusEnum.optional(),
   order: z.number().optional(),
   members: z.array(memberSchema).optional(),
 });
 
-// Update team approval status (tri-state)
+// Update team approval status
 export const updateStatusSchema = z.object({
   field: z.enum(["managerApproved", "directorApproved"]),
-  value: z.number().int().min(0).max(2),
+  value: approvalStatusEnum,
 });
 
 // Update team order (drag & drop)

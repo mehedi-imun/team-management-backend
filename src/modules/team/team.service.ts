@@ -2,7 +2,7 @@
 import httpStatus from "http-status";
 import { Types } from "mongoose";
 import { Team } from "./team.model";
-import { ITeam, Member } from "./team.interface";
+import { ITeam, IMember } from "./team.interface";
 import AppError from "../../errors/AppError";
 import QueryBuilder from "../../utils/queryBuilder";
 
@@ -88,7 +88,7 @@ const updateTeamOrder = async (orderList: { id: string; order: number }[]) => {
 };
 
 // Update a team member
-const updateMember = async (teamId: string, memberId: string, data: Member) => {
+const updateMember = async (teamId: string, memberId: string, data: IMember) => {
   if (!Types.ObjectId.isValid(teamId) || !Types.ObjectId.isValid(memberId))
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid ID");
 
