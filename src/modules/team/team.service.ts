@@ -76,7 +76,7 @@ const updateApprovalStatus = async (
   field: "managerApproved" | "directorApproved",
   value: "0" | "1" | "-1"
 ) => {
-  console.log(value)
+
   if (!Types.ObjectId.isValid(teamId)) {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
   }
@@ -90,7 +90,7 @@ const updateApprovalStatus = async (
 
 // Update order for drag & drop
 const updateTeamOrder = async (orderList: { id: string; order: number }[]) => {
-  console.log(orderList)
+
   const ops = orderList.map((o) => Team.findByIdAndUpdate(o.id, { order: o.order }));
   await Promise.all(ops);
   return true;
@@ -98,7 +98,7 @@ const updateTeamOrder = async (orderList: { id: string; order: number }[]) => {
 
 // Update a team member
 const updateMember = async (teamId: string, memberId: string, data: IMember) => {
-  console.log(data)
+
   if (!Types.ObjectId.isValid(teamId) || !Types.ObjectId.isValid(memberId))
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid ID");
 

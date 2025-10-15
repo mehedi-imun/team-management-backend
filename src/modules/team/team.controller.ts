@@ -133,7 +133,7 @@ const updateTeamOrder = async (req: Request, res: Response, next: NextFunction) 
 
 // Update a team member
 const updateMember = async (req: Request, res: Response, next: NextFunction) => {
-  console.log( req.body)
+
   try {
     await TeamService.updateMember(req.params.teamId, req.params.memberId, req.body);
     sendResponse(res, {
