@@ -5,7 +5,6 @@ const memberSchema = new Schema<IMember>(
   {
     name: { type: String, required: true },
   },
-  { _id: true }
 );
 
 const statusEnum = ["0", "1", "-1"] as const;

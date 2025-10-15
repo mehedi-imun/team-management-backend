@@ -13,9 +13,9 @@ const router = express.Router();
 router.post("/", validateRequest(createTeamSchema), TeamController.createTeam);
 router.get("/", TeamController.getAllTeams);
 router.get("/:teamId", TeamController.getTeamById);
-router.put(
+router.patch(
   "/:teamId",
-  validateRequest(updateStatusSchema),
+  
   TeamController.updateTeam
 );
 router.delete("/:teamId", TeamController.deleteTeam);

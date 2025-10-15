@@ -56,6 +56,7 @@ const getTeamById = async (req: Request, res: Response, next: NextFunction) => {
 const updateTeam = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const updatedTeam = await TeamService.updateTeam(req.params.teamId, req.body);
+    
     if (!updatedTeam) throw new AppError(httpStatus.NOT_FOUND, "Team not found");
     sendResponse(res, {
       statusCode: httpStatus.OK,
