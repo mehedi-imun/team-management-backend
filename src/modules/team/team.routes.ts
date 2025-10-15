@@ -29,7 +29,6 @@ router.patch("/:teamId/status", TeamController.updateApprovalStatus);
 // Drag & drop order update
 router.post(
   "/order",
-  validateRequest(orderSchema),
   TeamController.updateTeamOrder
 );
 

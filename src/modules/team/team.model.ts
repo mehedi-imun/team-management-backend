@@ -14,7 +14,6 @@ const teamSchema = new Schema<ITeam>(
   {
     name: { type: String, required: true },
     description: { type: String, required: true },
-    status: { type: String, enum: statusEnum, default: "0" },
     managerApproved: { type: String, enum: statusEnum, default: "0" },
     directorApproved: { type: String, enum: statusEnum, default: "0" },
     order: { type: Number, default: 0 },

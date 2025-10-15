@@ -74,14 +74,23 @@ const bulkDeleteTeams = async (ids: string[]) => {
 const updateApprovalStatus = async (
   teamId: string,
   field: "managerApproved" | "directorApproved",
-  value: 0 | 1 | 2
+  value: "0" | "1" | "-1"
 ) => {
-  if (!Types.ObjectId.isValid(teamId)) throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
-  return Team.findByIdAndUpdate(teamId, { [field]: value }, { new: true });
+  console.log(value)
+  if (!Types.ObjectId.isValid(teamId)) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
+  }
+
+  return Team.findByIdAndUpdate(
+    teamId,
+    { [field]: value },
+    { new: true }
+  );
 };
 
 // Update order for drag & drop
 const updateTeamOrder = async (orderList: { id: string; order: number }[]) => {
+  console.log(orderList)
   const ops = orderList.map((o) => Team.findByIdAndUpdate(o.id, { order: o.order }));
   await Promise.all(ops);
   return true;
@@ -89,6 +98,7 @@ const updateTeamOrder = async (orderList: { id: string; order: number }[]) => {
 
 // Update a team member
 const updateMember = async (teamId: string, memberId: string, data: IMember) => {
+  console.log(data)
   if (!Types.ObjectId.isValid(teamId) || !Types.ObjectId.isValid(memberId))
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid ID");
 

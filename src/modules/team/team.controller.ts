@@ -22,10 +22,10 @@ const createTeam = async (req: Request, res: Response, next: NextFunction) => {
 
 // Get all teams
 const getAllTeams = async (req: Request, res: Response, next: NextFunction) => {
-  console.log(req.query)
+
   try {
     const result = await TeamService.getAllTeams(req.query);
-    console.log(result)
+   
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -133,6 +133,7 @@ const updateTeamOrder = async (req: Request, res: Response, next: NextFunction) 
 
 // Update a team member
 const updateMember = async (req: Request, res: Response, next: NextFunction) => {
+  console.log( req.body)
   try {
     await TeamService.updateMember(req.params.teamId, req.params.memberId, req.body);
     sendResponse(res, {
