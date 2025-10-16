@@ -45,10 +45,7 @@ export const updateOrganizationSchema = z.object({
       .object({
         primaryColor: z
           .string()
-          .regex(
-            /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/,
-            "Invalid color hex code"
-          )
+          .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid color hex code")
           .optional(),
         allowedDomains: z.array(z.string()).optional(),
         ssoEnabled: z.boolean().optional(),

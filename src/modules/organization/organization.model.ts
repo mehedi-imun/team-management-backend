@@ -208,21 +208,27 @@ organizationSchema.virtual("isOnTrial").get(function (this: IOrganization) {
   );
 });
 
-organizationSchema.virtual("daysLeftInTrial").get(function (this: IOrganization) {
-  if (!this.trialEndsAt || this.subscriptionStatus !== "trialing") return 0;
-  const diff = this.trialEndsAt.getTime() - Date.now();
-  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-});
+organizationSchema
+  .virtual("daysLeftInTrial")
+  .get(function (this: IOrganization) {
+    if (!this.trialEndsAt || this.subscriptionStatus !== "trialing") return 0;
+    const diff = this.trialEndsAt.getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  });
 
-organizationSchema.virtual("usersPercentage").get(function (this: IOrganization) {
-  if (this.limits.maxUsers === 0) return 0;
-  return Math.round((this.usage.users / this.limits.maxUsers) * 100);
-});
+organizationSchema
+  .virtual("usersPercentage")
+  .get(function (this: IOrganization) {
+    if (this.limits.maxUsers === 0) return 0;
+    return Math.round((this.usage.users / this.limits.maxUsers) * 100);
+  });
 
-organizationSchema.virtual("teamsPercentage").get(function (this: IOrganization) {
-  if (this.limits.maxTeams === 0) return 0;
-  return Math.round((this.usage.teams / this.limits.maxTeams) * 100);
-});
+organizationSchema
+  .virtual("teamsPercentage")
+  .get(function (this: IOrganization) {
+    if (this.limits.maxTeams === 0) return 0;
+    return Math.round((this.usage.teams / this.limits.maxTeams) * 100);
+  });
 
 // Pre-save middleware
 organizationSchema.pre("save", function (next) {

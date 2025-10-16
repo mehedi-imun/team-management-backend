@@ -1,12 +1,12 @@
-import { Organization } from "./organization.model";
+import { nanoid } from "nanoid";
+import AppError from "../../errors/AppError";
+import { cacheService } from "../../services/cache.service";
 import {
   IOrganization,
   IOrganizationCreate,
   IOrganizationUpdate,
 } from "./organization.interface";
-import AppError from "../../errors/AppError";
-import { cacheService } from "../../services/cache.service";
-import { nanoid } from "nanoid";
+import { Organization } from "./organization.model";
 
 class OrganizationService {
   /**
@@ -45,7 +45,7 @@ class OrganizationService {
   async getOrganizationById(organizationId: string): Promise<IOrganization> {
     // Try cache first
     const cacheKey = `organization:${organizationId}`;
-    const cached = await getCachedData<IOrganization>(cacheKey);
+    const cached = await cacheService.get<IOrganization>(cacheKey);
     if (cached) return cached;
 
     const organization = await Organization.findOne({
@@ -58,7 +58,7 @@ class OrganizationService {
     }
 
     // Cache for 10 minutes
-    await setCachedData(cacheKey, organization, 600);
+    await cacheService.set(cacheKey, organization, 600);
 
     return organization;
   }
@@ -107,7 +107,8 @@ class OrganizationService {
 
     // Update fields
     if (data.name) organization.name = data.name;
-    if (data.description !== undefined) organization.description = data.description;
+    if (data.description !== undefined)
+      organization.description = data.description;
     if (data.logo !== undefined) organization.logo = data.logo;
     if (data.settings) {
       organization.settings = { ...organization.settings, ...data.settings };
@@ -142,7 +143,10 @@ class OrganizationService {
 
     // Check if user is owner
     if (organization.ownerId.toString() !== userId) {
-      throw new AppError(403, "Only organization owner can delete organization");
+      throw new AppError(
+        403,
+        "Only organization owner can delete organization"
+      );
     }
 
     // Soft delete
@@ -214,7 +218,7 @@ class OrganizationService {
     // Update plan and billing cycle
     organization.plan = plan;
     organization.billingCycle = billingCycle;
-    
+
     // Update subscription status (will be set to 'active' after Stripe payment)
     if (plan === "free") {
       organization.subscriptionStatus = "active";
