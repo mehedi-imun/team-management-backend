@@ -1,5 +1,5 @@
-import { Schema, model } from 'mongoose';
-import { INotification } from './notification.interface';
+import { Schema, model } from "mongoose";
+import { INotification } from "./notification.interface";
 
 const notificationSchema = new Schema<INotification>(
   {
@@ -18,8 +18,8 @@ const notificationSchema = new Schema<INotification>(
     },
     type: {
       type: String,
-      enum: ['info', 'success', 'warning', 'error'],
-      default: 'info',
+      enum: ["info", "success", "warning", "error"],
+      default: "info",
     },
     isRead: {
       type: Boolean,
@@ -38,4 +38,7 @@ const notificationSchema = new Schema<INotification>(
 // Index for efficient queries
 notificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
 
-export const Notification = model<INotification>('Notification', notificationSchema);
+export const Notification = model<INotification>(
+  "Notification",
+  notificationSchema
+);

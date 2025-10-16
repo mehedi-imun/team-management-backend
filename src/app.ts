@@ -9,9 +9,9 @@ import globalErrorHandler from "./middleware/globalErrorHandler";
 // Import routes
 import { AnalyticsRoutes } from "./modules/analytics/analytics.routes";
 import { AuthRoutes } from "./modules/auth/auth.routes";
+import { NotificationRoutes } from "./modules/notification/notification.routes";
 import { TeamRoutes } from "./modules/team/team.routes";
 import { UserRoutes } from "./modules/user/user.routes";
-import { NotificationRoutes } from "./modules/notification/notification.routes";
 
 const app = express();
 

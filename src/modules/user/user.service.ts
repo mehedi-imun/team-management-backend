@@ -1,6 +1,7 @@
 import httpStatus from "http-status";
 import { Types } from "mongoose";
 import AppError from "../../errors/AppError";
+import { emailService } from "../../services/email.service";
 import QueryBuilder from "../../utils/queryBuilder";
 import {
   IUser,
@@ -9,7 +10,6 @@ import {
   IUserWithoutPassword,
 } from "./user.interface";
 import { User } from "./user.model";
-import { emailService } from "../../services/email.service";
 
 // Get all users with pagination, search, filter
 const getAllUsers = async (query: any) => {
@@ -66,10 +66,10 @@ const createUser = async (
   }
 
   const user = await User.create(userData);
-  
+
   // Send welcome email
   await emailService.sendWelcomeEmail(user.email, user.name, user.role);
-  
+
   return user;
 };
 

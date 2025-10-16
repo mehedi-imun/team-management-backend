@@ -1,5 +1,5 @@
-import { Notification } from './notification.model';
-import { ICreateNotification, INotification } from './notification.interface';
+import { ICreateNotification, INotification } from "./notification.interface";
+import { Notification } from "./notification.model";
 
 // Get user notifications
 const getUserNotifications = async (userId: string, onlyUnread = false) => {
@@ -8,13 +8,13 @@ const getUserNotifications = async (userId: string, onlyUnread = false) => {
     query.isRead = false;
   }
 
-  return await Notification.find(query)
-    .sort({ createdAt: -1 })
-    .limit(50);
+  return await Notification.find(query).sort({ createdAt: -1 }).limit(50);
 };
 
 // Create notification
-const createNotification = async (data: ICreateNotification): Promise<INotification> => {
+const createNotification = async (
+  data: ICreateNotification
+): Promise<INotification> => {
   return await Notification.create(data);
 };
 

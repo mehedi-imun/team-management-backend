@@ -1,5 +1,6 @@
 import httpStatus from "http-status";
 import AppError from "../../errors/AppError";
+import { emailService } from "../../services/email.service";
 import {
   generateAccessToken,
   generatePasswordResetToken,
@@ -9,7 +10,6 @@ import {
 } from "../../utils/jwt";
 import { User } from "../user/user.model";
 import { ILoginResponse, IRefreshTokenResponse } from "./auth.interface";
-import { emailService } from "../../services/email.service";
 
 // Login user
 const login = async (

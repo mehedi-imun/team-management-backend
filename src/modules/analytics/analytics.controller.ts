@@ -18,7 +18,11 @@ const getSummary = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-const getTeamDistribution = async (req: Request, res: Response, next: NextFunction) => {
+const getTeamDistribution = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const result = await AnalyticsService.getTeamDistribution();
 
@@ -33,7 +37,11 @@ const getTeamDistribution = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-const getApprovalRates = async (req: Request, res: Response, next: NextFunction) => {
+const getApprovalRates = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const result = await AnalyticsService.getApprovalRates();
 
