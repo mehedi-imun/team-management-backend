@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import AppError from "../errors/AppError";
 import organizationService from "../modules/organization/organization.service";
 
@@ -114,7 +114,10 @@ export const checkSubscriptionStatus = async (
     const org = await organizationService.getOrganizationById(organizationId);
 
     // Allow trialing and active subscriptions
-    if (org.subscriptionStatus === "trialing" || org.subscriptionStatus === "active") {
+    if (
+      org.subscriptionStatus === "trialing" ||
+      org.subscriptionStatus === "active"
+    ) {
       return next();
     }
 

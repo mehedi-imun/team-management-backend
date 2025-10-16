@@ -1,12 +1,12 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import AppError from "../errors/AppError";
 
 /**
  * Tenant Context Middleware
- * 
+ *
  * Injects organizationId into request object from authenticated user.
  * This ensures all subsequent queries are automatically scoped to the user's organization.
- * 
+ *
  * Usage: Apply after authenticate middleware on protected routes
  */
 export const tenantContext = (
@@ -35,7 +35,7 @@ export const tenantContext = (
 
 /**
  * Optional Tenant Context
- * 
+ *
  * Same as tenantContext but doesn't fail if user is not authenticated.
  * Useful for routes that can be accessed with or without authentication.
  */

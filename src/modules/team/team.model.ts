@@ -1,11 +1,9 @@
 import { Schema, model } from "mongoose";
 import { IMember, ITeam } from "./team.interface";
 
-const memberSchema = new Schema<IMember>(
-  {
-    name: { type: String, required: true },
-  },
-);
+const memberSchema = new Schema<IMember>({
+  name: { type: String, required: true },
+});
 
 const statusEnum = ["0", "1", "-1"] as const;
 

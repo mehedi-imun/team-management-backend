@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import catchAsync from "../../utils/catchAsync";
-import organizationService from "./organization.service";
-import sendResponse from "../../utils/sendResponse";
 import AppError from "../../errors/AppError";
+import catchAsync from "../../utils/catchAsync";
+import sendResponse from "../../utils/sendResponse";
+import organizationService from "./organization.service";
 
 class OrganizationController {
   /**
@@ -108,9 +108,7 @@ class OrganizationController {
     sendResponse(res, {
       statusCode: 200,
       success: true,
-      message: isAvailable
-        ? "Slug is available"
-        : "Slug is already taken",
+      message: isAvailable ? "Slug is available" : "Slug is already taken",
       data: { isAvailable, slug },
     });
   });

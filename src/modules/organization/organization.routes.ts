@@ -1,13 +1,12 @@
 import { Router } from "express";
-import organizationController from "./organization.controller";
 import { authenticate } from "../../middleware/authenticate";
-import { authorize } from "../../middleware/authorize";
 import { validateRequest } from "../../middleware/validateRequest";
+import organizationController from "./organization.controller";
 import {
+  checkSlugSchema,
   createOrganizationSchema,
   updateOrganizationSchema,
   upgradePlanSchema,
-  checkSlugSchema,
 } from "./organization.validation";
 
 const router = Router();

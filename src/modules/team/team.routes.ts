@@ -4,11 +4,7 @@ import { tenantContext } from "../../middleware/tenantContext";
 import { checkTeamLimit } from "../../middleware/usageLimits";
 import { validateRequest } from "../../middleware/validateRequest";
 import { TeamController } from "./team.controller";
-import {
-  createTeamSchema,
-  orderSchema,
-  updateStatusSchema,
-} from "./team.validation";
+import { createTeamSchema } from "./team.validation";
 
 const router = express.Router();
 

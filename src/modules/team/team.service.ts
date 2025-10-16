@@ -45,9 +45,11 @@ const getAllTeams = async (query: any, organizationId: string) => {
     return cached;
   }
 
-  console.log(`❌ Cache miss for teams (org: ${organizationId}) - fetching from DB`);
+  console.log(
+    `❌ Cache miss for teams (org: ${organizationId}) - fetching from DB`
+  );
   const searchableFields = ["name", "members.name"];
-  
+
   // Add organization filter to base query
   const baseQuery = Team.find({ organizationId });
   const queryBuilder = new QueryBuilder<ITeam>(baseQuery, query);
@@ -126,7 +128,9 @@ const updateTeam = async (
   // Invalidate cache
   await cacheService.delete(`team:${organizationId}:${teamId}`);
   await cacheService.invalidatePattern(`teams:${organizationId}:*`);
-  console.log(`🗑️  Cache invalidated: team:${organizationId}:${teamId} and teams:${organizationId}:*`);
+  console.log(
+    `🗑️  Cache invalidated: team:${organizationId}:${teamId} and teams:${organizationId}:*`
+  );
 
   return result;
 };
@@ -141,7 +145,9 @@ const deleteTeam = async (id: string, organizationId: string) => {
   // Invalidate cache
   await cacheService.delete(`team:${organizationId}:${id}`);
   await cacheService.invalidatePattern(`teams:${organizationId}:*`);
-  console.log(`🗑️  Cache invalidated after delete: team:${organizationId}:${id}`);
+  console.log(
+    `🗑️  Cache invalidated after delete: team:${organizationId}:${id}`
+  );
 
   return result;
 };
@@ -158,7 +164,9 @@ const bulkDeleteTeams = async (ids: string[], organizationId: string) => {
   // Invalidate all cache for this organization
   await cacheService.invalidatePattern(`team:${organizationId}:*`);
   await cacheService.invalidatePattern(`teams:${organizationId}:*`);
-  console.log(`🗑️  Cache invalidated after bulk delete (org: ${organizationId})`);
+  console.log(
+    `🗑️  Cache invalidated after bulk delete (org: ${organizationId})`
+  );
 
   return result;
 };
@@ -190,10 +198,10 @@ const updateTeamOrder = async (
     Team.findOneAndUpdate({ _id: o.id, organizationId }, { order: o.order })
   );
   await Promise.all(ops);
-  
+
   // Invalidate cache
   await cacheService.invalidatePattern(`teams:${organizationId}:*`);
-  
+
   return true;
 };
 
