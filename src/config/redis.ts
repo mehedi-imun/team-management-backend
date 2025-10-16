@@ -1,5 +1,5 @@
-import Redis from 'ioredis';
-import env from './env';
+import Redis from "ioredis";
+import env from "./env";
 
 let redisClient: Redis | null = null;
 
@@ -17,17 +17,17 @@ export const connectRedis = (): Redis => {
       },
     });
 
-    redisClient.on('connect', () => {
-      console.log('✅ Redis connected successfully');
+    redisClient.on("connect", () => {
+      console.log("✅ Redis connected successfully");
     });
 
-    redisClient.on('error', (err) => {
-      console.error('❌ Redis connection error:', err);
+    redisClient.on("error", (err) => {
+      console.error("❌ Redis connection error:", err);
     });
 
     return redisClient;
   } catch (error) {
-    console.error('Failed to connect to Redis:', error);
+    console.error("Failed to connect to Redis:", error);
     throw error;
   }
 };
@@ -43,6 +43,6 @@ export const disconnectRedis = async (): Promise<void> => {
   if (redisClient) {
     await redisClient.quit();
     redisClient = null;
-    console.log('Redis disconnected');
+    console.log("Redis disconnected");
   }
 };

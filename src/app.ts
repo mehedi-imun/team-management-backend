@@ -1,16 +1,17 @@
-import cors from 'cors';
-import express from 'express';
-import helmet from 'helmet';
-import cookieParser from 'cookie-parser';
-import rateLimit from 'express-rate-limit';
-import env from './config/env';
-import globalErrorHandler from './middleware/globalErrorHandler';
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import express from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import env from "./config/env";
+import globalErrorHandler from "./middleware/globalErrorHandler";
 
 // Import routes
-import { TeamRoutes } from './modules/team/team.routes';
-import { AuthRoutes } from './modules/auth/auth.routes';
-import { UserRoutes } from './modules/user/user.routes';
-import { AnalyticsRoutes } from './modules/analytics/analytics.routes';
+import { AnalyticsRoutes } from "./modules/analytics/analytics.routes";
+import { AuthRoutes } from "./modules/auth/auth.routes";
+import { TeamRoutes } from "./modules/team/team.routes";
+import { UserRoutes } from "./modules/user/user.routes";
+import { NotificationRoutes } from "./modules/notification/notification.routes";
 
 const app = express();
 
@@ -21,11 +22,11 @@ app.use(helmet());
 const limiter = rateLimit({
   windowMs: env.RATE_LIMIT_WINDOW_MS,
   max: env.RATE_LIMIT_MAX_REQUESTS,
-  message: 'Too many requests from this IP, please try again later.',
+  message: "Too many requests from this IP, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use('/api/', limiter);
+app.use("/api/", limiter);
 
 // CORS
 app.use(
@@ -43,21 +44,24 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // API Routes
-app.use('/api/v1/auth', AuthRoutes);
-app.use('/api/v1/users', UserRoutes);
-app.use('/api/v1/teams', TeamRoutes);
-app.use('/api/v1/analytics', AnalyticsRoutes);
+app.use("/api/v1/auth", AuthRoutes);
+app.use("/api/v1/users", UserRoutes);
+app.use("/api/v1/teams", TeamRoutes);
+app.use("/api/v1/analytics", AnalyticsRoutes);
+app.use("/api/v1/notifications", NotificationRoutes);
 
 // Default route for testing
-app.get('/', (_req, res) => {
+app.get("/", (_req, res) => {
   res.json({
     success: true,
-    message: 'Team Management API is running',
-    version: '1.0.0',
+    message: "Team Management API is running",
+    version: "1.0.0",
     endpoints: {
-      auth: '/api/v1/auth',
-      users: '/api/v1/users',
-      teams: '/api/v1/teams',
+      auth: "/api/v1/auth",
+      users: "/api/v1/users",
+      teams: "/api/v1/teams",
+      analytics: "/api/v1/analytics",
+      notifications: "/api/v1/notifications",
     },
   });
 });

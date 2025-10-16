@@ -1,5 +1,5 @@
-import nodemailer from 'nodemailer';
-import envConfig from '../config/env';
+import nodemailer from "nodemailer";
+import envConfig from "../config/env";
 
 class EmailService {
   private transporter: nodemailer.Transporter | null = null;
@@ -19,9 +19,13 @@ class EmailService {
     return this.transporter;
   }
 
-  async sendPasswordResetEmail(to: string, resetToken: string, userName: string) {
+  async sendPasswordResetEmail(
+    to: string,
+    resetToken: string,
+    userName: string
+  ) {
     const resetUrl = `${envConfig.FRONTEND_URL}/reset-password?token=${resetToken}`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -40,17 +44,17 @@ class EmailService {
     try {
       const transporter = await this.getTransporter();
       if (!transporter) return false;
-      
+
       await transporter.sendMail({
         from: `"Team Management" <${envConfig.EMAIL_FROM}>`,
         to,
-        subject: 'Password Reset Request',
+        subject: "Password Reset Request",
         html,
       });
       console.log(`✅ Password reset email sent to ${to}`);
       return true;
     } catch (error) {
-      console.error('❌ Email send error:', error);
+      console.error("❌ Email send error:", error);
       return false;
     }
   }
@@ -72,17 +76,17 @@ class EmailService {
     try {
       const transporter = await this.getTransporter();
       if (!transporter) return false;
-      
+
       await transporter.sendMail({
         from: `"Team Management" <${envConfig.EMAIL_FROM}>`,
         to,
-        subject: 'Welcome to Team Management',
+        subject: "Welcome to Team Management",
         html,
       });
       console.log(`✅ Welcome email sent to ${to}`);
       return true;
     } catch (error) {
-      console.error('❌ Email error:', error);
+      console.error("❌ Email error:", error);
       return false;
     }
   }

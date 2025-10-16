@@ -1,35 +1,40 @@
-import httpStatus from 'http-status';
-import crypto from 'crypto';
-import AppError from '../../errors/AppError';
-import { User } from '../user/user.model';
-import { UserService } from '../user/user.service';
+import httpStatus from "http-status";
+import AppError from "../../errors/AppError";
 import {
   generateAccessToken,
-  generateRefreshToken,
   generatePasswordResetToken,
+  generateRefreshToken,
   hashResetToken,
   verifyRefreshToken,
-} from '../../utils/jwt';
-import { ILoginResponse, IRefreshTokenResponse } from './auth.interface';
+} from "../../utils/jwt";
+import { User } from "../user/user.model";
+import { ILoginResponse, IRefreshTokenResponse } from "./auth.interface";
+import { emailService } from "../../services/email.service";
 
 // Login user
-const login = async (email: string, password: string): Promise<ILoginResponse> => {
+const login = async (
+  email: string,
+  password: string
+): Promise<ILoginResponse> => {
   // Find user with password field
-  const user = await User.findOne({ email }).select('+password');
-  
+  const user = await User.findOne({ email }).select("+password");
+
   if (!user) {
-    throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid email or password');
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid email or password");
   }
 
   // Check if user is active
   if (!user.isActive) {
-    throw new AppError(httpStatus.FORBIDDEN, 'Your account has been deactivated');
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "Your account has been deactivated"
+    );
   }
 
   // Verify password
   const isPasswordValid = await (user as any).comparePassword(password);
   if (!isPasswordValid) {
-    throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid email or password');
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid email or password");
   }
 
   // Generate tokens
@@ -59,14 +64,16 @@ const login = async (email: string, password: string): Promise<ILoginResponse> =
 };
 
 // Refresh access token
-const refreshAccessToken = async (refreshToken: string): Promise<IRefreshTokenResponse> => {
+const refreshAccessToken = async (
+  refreshToken: string
+): Promise<IRefreshTokenResponse> => {
   try {
     const decoded = verifyRefreshToken(refreshToken);
-    
+
     // Check if user still exists and is active
     const user = await User.findById(decoded.userId);
     if (!user || !user.isActive) {
-      throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid refresh token');
+      throw new AppError(httpStatus.UNAUTHORIZED, "Invalid refresh token");
     }
 
     // Generate new access token
@@ -78,7 +85,7 @@ const refreshAccessToken = async (refreshToken: string): Promise<IRefreshTokenRe
 
     return { accessToken: newAccessToken };
   } catch (error) {
-    throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid refresh token');
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid refresh token");
   }
 };
 
@@ -87,7 +94,7 @@ const forgotPassword = async (email: string): Promise<string> => {
   const user = await User.findOne({ email });
   if (!user) {
     // Don't reveal that email doesn't exist for security
-    return 'If an account with that email exists, a password reset link has been sent';
+    return "If an account with that email exists, a password reset link has been sent";
   }
 
   // Generate reset token
@@ -99,23 +106,29 @@ const forgotPassword = async (email: string): Promise<string> => {
   user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
   await user.save();
 
-  // TODO: Send email with reset token
-  // For now, return the token (in production, only send via email)
-  
-  return resetToken;
+  // Send password reset email
+  await emailService.sendPasswordResetEmail(user.email, resetToken, user.name);
+
+  return "If an account with that email exists, a password reset link has been sent";
 };
 
 // Reset password using token
-const resetPassword = async (token: string, newPassword: string): Promise<void> => {
+const resetPassword = async (
+  token: string,
+  newPassword: string
+): Promise<void> => {
   const hashedToken = hashResetToken(token);
 
   const user = await User.findOne({
     passwordResetToken: hashedToken,
     passwordResetExpires: { $gt: new Date() },
-  }).select('+passwordResetToken +passwordResetExpires');
+  }).select("+passwordResetToken +passwordResetExpires");
 
   if (!user) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Invalid or expired reset token');
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Invalid or expired reset token"
+    );
   }
 
   // Update password and clear reset token

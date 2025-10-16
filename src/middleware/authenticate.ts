@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import { verifyAccessToken } from '../utils/jwt';
-import AppError from '../errors/AppError';
-import { User } from '../modules/user/user.model';
+import { NextFunction, Request, Response } from "express";
+import AppError from "../errors/AppError";
+import { User } from "../modules/user/user.model";
+import { verifyAccessToken } from "../utils/jwt";
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -13,17 +13,19 @@ export const authenticate = async (
   next: NextFunction
 ) => {
   try {
-    const token = req.cookies?.accessToken || req.headers.authorization?.replace('Bearer ', '');
+    const token =
+      req.cookies?.accessToken ||
+      req.headers.authorization?.replace("Bearer ", "");
 
     if (!token) {
-      throw new AppError(401, 'Unauthorized - No token provided');
+      throw new AppError(401, "Unauthorized - No token provided");
     }
 
     const decoded = verifyAccessToken(token);
     const user = await User.findById(decoded.userId);
 
     if (!user || !user.isActive) {
-      throw new AppError(401, 'Unauthorized - Invalid user');
+      throw new AppError(401, "Unauthorized - Invalid user");
     }
 
     req.user = user;
@@ -40,7 +42,9 @@ export const authenticateOptional = async (
   next: NextFunction
 ) => {
   try {
-    const token = req.cookies?.accessToken || req.headers.authorization?.replace('Bearer ', '');
+    const token =
+      req.cookies?.accessToken ||
+      req.headers.authorization?.replace("Bearer ", "");
     if (token) {
       const decoded = verifyAccessToken(token);
       const user = await User.findById(decoded.userId);

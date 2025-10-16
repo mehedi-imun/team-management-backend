@@ -1,5 +1,5 @@
-import { getRedisClient } from '../config/redis';
-import { Redis } from 'ioredis';
+import { Redis } from "ioredis";
+import { getRedisClient } from "../config/redis";
 
 class CacheService {
   private redis: Redis | null = null;
@@ -91,7 +91,7 @@ class CacheService {
       await client.flushdb();
       return true;
     } catch (error) {
-      console.error('Cache clear error:', error);
+      console.error("Cache clear error:", error);
       return false;
     }
   }

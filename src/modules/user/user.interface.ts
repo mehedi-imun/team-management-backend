@@ -3,7 +3,7 @@ export interface IUser {
   email: string;
   password: string;
   name: string;
-  role: 'Admin' | 'Manager' | 'Director';
+  role: "Admin" | "Manager" | "Director";
   isActive: boolean;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
@@ -11,7 +11,7 @@ export interface IUser {
   updatedAt?: Date;
 }
 
-export type IUserWithoutPassword = Omit<IUser, 'password'>;
+export type IUserWithoutPassword = Omit<IUser, "password">;
 
 export interface IUserLogin {
   email: string;
@@ -22,11 +22,11 @@ export interface IUserCreate {
   email: string;
   password: string;
   name: string;
-  role: 'Admin' | 'Manager' | 'Director';
+  role: "Admin" | "Manager" | "Director";
 }
 
 export interface IUserUpdate {
   name?: string;
-  role?: 'Admin' | 'Manager' | 'Director';
+  role?: "Admin" | "Manager" | "Director";
   isActive?: boolean;
 }

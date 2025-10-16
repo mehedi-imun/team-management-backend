@@ -1,35 +1,35 @@
-import { Schema, model } from 'mongoose';
-import bcrypt from 'bcryptjs';
-import { IUser } from './user.interface';
+import bcrypt from "bcryptjs";
+import { Schema, model } from "mongoose";
+import { IUser } from "./user.interface";
 
 const userSchema = new Schema<IUser>(
   {
     email: {
       type: String,
-      required: [true, 'Email is required'],
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
       trim: true,
-      match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email'],
+      match: [/^\S+@\S+\.\S+$/, "Please provide a valid email"],
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
-      minlength: [6, 'Password must be at least 6 characters'],
+      required: [true, "Password is required"],
+      minlength: [6, "Password must be at least 6 characters"],
       select: false, // Don't return password by default
     },
     name: {
       type: String,
-      required: [true, 'Name is required'],
+      required: [true, "Name is required"],
       trim: true,
     },
     role: {
       type: String,
       enum: {
-        values: ['Admin', 'Manager', 'Director'],
-        message: '{VALUE} is not a valid role',
+        values: ["Admin", "Manager", "Director"],
+        message: "{VALUE} is not a valid role",
       },
-      required: [true, 'Role is required'],
+      required: [true, "Role is required"],
     },
     isActive: {
       type: Boolean,
@@ -59,9 +59,9 @@ const userSchema = new Schema<IUser>(
 );
 
 // Hash password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -85,4 +85,4 @@ userSchema.methods.comparePassword = async function (
 // Add index for email
 userSchema.index({ email: 1 });
 
-export const User = model<IUser>('User', userSchema);
+export const User = model<IUser>("User", userSchema);

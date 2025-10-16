@@ -1,6 +1,6 @@
-import jwt, { SignOptions } from 'jsonwebtoken';
-import crypto from 'crypto';
-import env from '../config/env';
+import crypto from "crypto";
+import jwt, { SignOptions } from "jsonwebtoken";
+import env from "../config/env";
 
 export interface TokenPayload {
   userId: string;
@@ -24,7 +24,7 @@ export const verifyAccessToken = (token: string): TokenPayload => {
   try {
     return jwt.verify(token, env.JWT_SECRET) as TokenPayload;
   } catch (error) {
-    throw new Error('Invalid or expired access token');
+    throw new Error("Invalid or expired access token");
   }
 };
 
@@ -32,14 +32,14 @@ export const verifyRefreshToken = (token: string): TokenPayload => {
   try {
     return jwt.verify(token, env.JWT_REFRESH_SECRET) as TokenPayload;
   } catch (error) {
-    throw new Error('Invalid or expired refresh token');
+    throw new Error("Invalid or expired refresh token");
   }
 };
 
 export const generatePasswordResetToken = (): string => {
-  return crypto.randomBytes(32).toString('hex');
+  return crypto.randomBytes(32).toString("hex");
 };
 
 export const hashResetToken = (token: string): string => {
-  return crypto.createHash('sha256').update(token).digest('hex');
+  return crypto.createHash("sha256").update(token).digest("hex");
 };

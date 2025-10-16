@@ -1,16 +1,21 @@
-import httpStatus from 'http-status';
-import { Types } from 'mongoose';
-import bcrypt from 'bcryptjs';
-import AppError from '../../errors/AppError';
-import { User } from './user.model';
-import { IUser, IUserCreate, IUserUpdate, IUserWithoutPassword } from './user.interface';
-import QueryBuilder from '../../utils/queryBuilder';
+import httpStatus from "http-status";
+import { Types } from "mongoose";
+import AppError from "../../errors/AppError";
+import QueryBuilder from "../../utils/queryBuilder";
+import {
+  IUser,
+  IUserCreate,
+  IUserUpdate,
+  IUserWithoutPassword,
+} from "./user.interface";
+import { User } from "./user.model";
+import { emailService } from "../../services/email.service";
 
 // Get all users with pagination, search, filter
 const getAllUsers = async (query: any) => {
-  const searchableFields = ['name', 'email'];
+  const searchableFields = ["name", "email"];
   const queryBuilder = new QueryBuilder<IUser>(User.find(), query);
-  
+
   const userQuery = queryBuilder
     .search(searchableFields)
     .filter()
@@ -27,14 +32,16 @@ const getAllUsers = async (query: any) => {
 };
 
 // Get single user by ID
-const getUserById = async (id: string): Promise<IUserWithoutPassword | null> => {
+const getUserById = async (
+  id: string
+): Promise<IUserWithoutPassword | null> => {
   if (!Types.ObjectId.isValid(id)) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Invalid user ID');
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid user ID");
   }
 
   const user = await User.findById(id);
   if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
   }
 
   return user;
@@ -42,18 +49,27 @@ const getUserById = async (id: string): Promise<IUserWithoutPassword | null> => 
 
 // Get user by email
 const getUserByEmail = async (email: string): Promise<IUser | null> => {
-  return await User.findOne({ email }).select('+password');
+  return await User.findOne({ email }).select("+password");
 };
 
 // Create new user (Admin only)
-const createUser = async (userData: IUserCreate): Promise<IUserWithoutPassword> => {
+const createUser = async (
+  userData: IUserCreate
+): Promise<IUserWithoutPassword> => {
   // Check if user already exists
   const existingUser = await User.findOne({ email: userData.email });
   if (existingUser) {
-    throw new AppError(httpStatus.CONFLICT, 'User with this email already exists');
+    throw new AppError(
+      httpStatus.CONFLICT,
+      "User with this email already exists"
+    );
   }
 
   const user = await User.create(userData);
+  
+  // Send welcome email
+  await emailService.sendWelcomeEmail(user.email, user.name, user.role);
+  
   return user;
 };
 
@@ -63,22 +79,21 @@ const updateUser = async (
   updateData: IUserUpdate
 ): Promise<IUserWithoutPassword | null> => {
   if (!Types.ObjectId.isValid(id)) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Invalid user ID');
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid user ID");
   }
 
   // Don't allow email update
-  if ('email' in updateData) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Email cannot be updated');
+  if ("email" in updateData) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Email cannot be updated");
   }
 
-  const user = await User.findByIdAndUpdate(
-    id,
-    updateData,
-    { new: true, runValidators: true }
-  );
+  const user = await User.findByIdAndUpdate(id, updateData, {
+    new: true,
+    runValidators: true,
+  });
 
   if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
   }
 
   return user;
@@ -87,12 +102,12 @@ const updateUser = async (
 // Delete user
 const deleteUser = async (id: string): Promise<void> => {
   if (!Types.ObjectId.isValid(id)) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Invalid user ID');
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid user ID");
   }
 
   const user = await User.findByIdAndDelete(id);
   if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
   }
 };
 
@@ -102,15 +117,18 @@ const changePassword = async (
   currentPassword: string,
   newPassword: string
 ): Promise<void> => {
-  const user = await User.findById(userId).select('+password');
+  const user = await User.findById(userId).select("+password");
   if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
   }
 
   // Verify current password
   const isPasswordValid = await (user as any).comparePassword(currentPassword);
   if (!isPasswordValid) {
-    throw new AppError(httpStatus.UNAUTHORIZED, 'Current password is incorrect');
+    throw new AppError(
+      httpStatus.UNAUTHORIZED,
+      "Current password is incorrect"
+    );
   }
 
   // Update password
@@ -119,14 +137,16 @@ const changePassword = async (
 };
 
 // Toggle user active status
-const toggleUserStatus = async (id: string): Promise<IUserWithoutPassword | null> => {
+const toggleUserStatus = async (
+  id: string
+): Promise<IUserWithoutPassword | null> => {
   if (!Types.ObjectId.isValid(id)) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Invalid user ID');
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid user ID");
   }
 
   const user = await User.findById(id);
   if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
   }
 
   user.isActive = !user.isActive;

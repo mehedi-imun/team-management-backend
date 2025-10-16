@@ -1,8 +1,8 @@
-import { Server } from 'http';
-import mongoose from 'mongoose';
-import app from './app';
-import env from './config/env';
-import { connectRedis, disconnectRedis } from './config/redis';
+import { Server } from "http";
+import mongoose from "mongoose";
+import app from "./app";
+import env from "./config/env";
+import { connectRedis, disconnectRedis } from "./config/redis";
 
 let server: Server | null = null;
 
@@ -10,13 +10,16 @@ async function startServer() {
   try {
     // Connect to MongoDB
     await mongoose.connect(env.DATABASE_URL);
-    console.log('✅ MongoDB connected successfully');
+    console.log("✅ MongoDB connected successfully");
 
     // Connect to Redis
     try {
       connectRedis();
     } catch (redisError) {
-      console.warn('⚠️  Redis connection failed, continuing without cache:', redisError);
+      console.warn(
+        "⚠️  Redis connection failed, continuing without cache:",
+        redisError
+      );
     }
 
     // Start HTTP server
@@ -26,7 +29,7 @@ async function startServer() {
       console.log(`🌐 API URL: http://localhost:${env.PORT}`);
     });
   } catch (err) {
-    console.error('❌ Failed to start server:', err);
+    console.error("❌ Failed to start server:", err);
     process.exit(1);
   }
 }
@@ -34,18 +37,18 @@ async function startServer() {
 // Graceful shutdown
 async function gracefulShutdown(signal: string) {
   console.log(`\n${signal} signal received: closing HTTP server`);
-  
+
   if (server) {
     server.close(async () => {
-      console.log('HTTP server closed');
-      
+      console.log("HTTP server closed");
+
       // Close database connection
       await mongoose.connection.close();
-      console.log('MongoDB connection closed');
-      
+      console.log("MongoDB connection closed");
+
       // Close Redis connection
       await disconnectRedis();
-      
+
       process.exit(0);
     });
   } else {
@@ -53,11 +56,11 @@ async function gracefulShutdown(signal: string) {
   }
 }
 
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
-process.on('unhandledRejection', (err) => {
-  console.error('😈 Unhandled Rejection detected, shutting down...', err);
+process.on("unhandledRejection", (err) => {
+  console.error("😈 Unhandled Rejection detected, shutting down...", err);
   if (server) {
     server.close(() => {
       process.exit(1);
@@ -66,8 +69,8 @@ process.on('unhandledRejection', (err) => {
   process.exit(1);
 });
 
-process.on('uncaughtException', (err) => {
-  console.error('😈 Uncaught Exception detected, shutting down...', err);
+process.on("uncaughtException", (err) => {
+  console.error("😈 Uncaught Exception detected, shutting down...", err);
   process.exit(1);
 });
 

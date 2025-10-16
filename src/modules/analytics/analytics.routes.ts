@@ -1,29 +1,29 @@
-import { Router } from 'express';
-import { AnalyticsController } from './analytics.controller';
-import { authenticate } from '../../middleware/authenticate';
-import { authorize } from '../../middleware/authorize';
+import { Router } from "express";
+import { authenticate } from "../../middleware/authenticate";
+import { authorize } from "../../middleware/authorize";
+import { AnalyticsController } from "./analytics.controller";
 
 const router = Router();
 
 // All analytics routes require authentication and Admin/Director role
 router.get(
-  '/summary',
+  "/summary",
   authenticate,
-  authorize('Admin', 'Director'),
+  authorize("Admin", "Director"),
   AnalyticsController.getSummary
 );
 
 router.get(
-  '/teams',
+  "/teams",
   authenticate,
-  authorize('Admin', 'Director'),
+  authorize("Admin", "Director"),
   AnalyticsController.getTeamDistribution
 );
 
 router.get(
-  '/approvals',
+  "/approvals",
   authenticate,
-  authorize('Admin', 'Director'),
+  authorize("Admin", "Director"),
   AnalyticsController.getApprovalRates
 );
 

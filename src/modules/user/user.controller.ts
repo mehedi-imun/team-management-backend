@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import httpStatus from 'http-status';
-import { UserService } from './user.service';
-import sendResponse from '../../utils/sendResponse';
+import { NextFunction, Request, Response } from "express";
+import httpStatus from "http-status";
+import sendResponse from "../../utils/sendResponse";
+import { UserService } from "./user.service";
 
 // Get all users
 const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
@@ -11,7 +11,7 @@ const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: 'Users retrieved successfully',
+      message: "Users retrieved successfully",
       data: result.data,
       meta: result.meta,
     });
@@ -28,7 +28,7 @@ const getUserById = async (req: Request, res: Response, next: NextFunction) => {
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: 'User retrieved successfully',
+      message: "User retrieved successfully",
       data: user,
     });
   } catch (error) {
@@ -44,7 +44,7 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
     sendResponse(res, {
       statusCode: httpStatus.CREATED,
       success: true,
-      message: 'User created successfully',
+      message: "User created successfully",
       data: user,
     });
   } catch (error) {
@@ -60,7 +60,7 @@ const updateUser = async (req: Request, res: Response, next: NextFunction) => {
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: 'User updated successfully',
+      message: "User updated successfully",
       data: user,
     });
   } catch (error) {
@@ -76,7 +76,7 @@ const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: 'User deleted successfully',
+      message: "User deleted successfully",
       data: null,
     });
   } catch (error) {
@@ -85,14 +85,18 @@ const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 // Toggle user status
-const toggleUserStatus = async (req: Request, res: Response, next: NextFunction) => {
+const toggleUserStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const user = await UserService.toggleUserStatus(req.params.userId);
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: 'User status updated successfully',
+      message: "User status updated successfully",
       data: user,
     });
   } catch (error) {
@@ -104,12 +108,16 @@ const toggleUserStatus = async (req: Request, res: Response, next: NextFunction)
 const changePassword = async (req: any, res: Response, next: NextFunction) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    await UserService.changePassword(req.user._id, currentPassword, newPassword);
+    await UserService.changePassword(
+      req.user._id,
+      currentPassword,
+      newPassword
+    );
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: 'Password changed successfully',
+      message: "Password changed successfully",
       data: null,
     });
   } catch (error) {
