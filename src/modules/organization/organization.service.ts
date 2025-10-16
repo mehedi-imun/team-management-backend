@@ -69,7 +69,7 @@ class OrganizationService {
   async getUserOrganizations(userId: string): Promise<IOrganization[]> {
     // Try cache first
     const cacheKey = `organizations:user:${userId}`;
-    const cached = await getCachedData<IOrganization[]>(cacheKey);
+    const cached = await cacheService.get<IOrganization[]>(cacheKey);
     if (cached) return cached;
 
     const organizations = await Organization.find({
@@ -78,7 +78,7 @@ class OrganizationService {
     }).sort({ createdAt: -1 });
 
     // Cache for 5 minutes
-    await setCachedData(cacheKey, organizations, 300);
+    await cacheService.set(cacheKey, organizations, 300);
 
     return organizations;
   }
@@ -118,8 +118,8 @@ class OrganizationService {
 
     // Invalidate cache
     await Promise.all([
-      deleteCachedData(`organization:${organizationId}`),
-      deleteCachedData(`organizations:user:${userId}`),
+      cacheService.delete(`organization:${organizationId}`),
+      cacheService.delete(`organizations:user:${userId}`),
     ]);
 
     return organization;
@@ -155,8 +155,8 @@ class OrganizationService {
 
     // Invalidate cache
     await Promise.all([
-      deleteCachedData(`organization:${organizationId}`),
-      deleteCachedData(`organizations:user:${userId}`),
+      cacheService.delete(`organization:${organizationId}`),
+      cacheService.delete(`organizations:user:${userId}`),
     ]);
   }
 
@@ -229,8 +229,8 @@ class OrganizationService {
 
     // Invalidate cache
     await Promise.all([
-      deleteCachedData(`organization:${organizationId}`),
-      deleteCachedData(`organizations:user:${userId}`),
+      cacheService.delete(`organization:${organizationId}`),
+      cacheService.delete(`organizations:user:${userId}`),
     ]);
 
     return organization;
@@ -296,7 +296,7 @@ class OrganizationService {
     await organization.save();
 
     // Invalidate cache
-    await deleteCachedData(`organization:${organizationId}`);
+    await cacheService.delete(`organization:${organizationId}`);
   }
 
   /**
@@ -316,7 +316,7 @@ class OrganizationService {
     await organization.save();
 
     // Invalidate cache
-    await deleteCachedData(`organization:${organizationId}`);
+    await cacheService.delete(`organization:${organizationId}`);
   }
 }
 

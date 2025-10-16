@@ -7,6 +7,7 @@ export interface IMember {
 
 export interface ITeam {
   _id?: string;
+  organizationId: string; // Multi-tenancy: organization this team belongs to
   name: string;
   description: string;
   managerApproved: "0" | "1" | "-1";

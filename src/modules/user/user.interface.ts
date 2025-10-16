@@ -1,5 +1,6 @@
 export interface IUser {
   _id?: string;
+  organizationId: string; // Multi-tenancy: organization this user belongs to
   email: string;
   password: string;
   name: string;

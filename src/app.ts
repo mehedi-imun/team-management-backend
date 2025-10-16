@@ -10,6 +10,7 @@ import globalErrorHandler from "./middleware/globalErrorHandler";
 import { AnalyticsRoutes } from "./modules/analytics/analytics.routes";
 import { AuthRoutes } from "./modules/auth/auth.routes";
 import { NotificationRoutes } from "./modules/notification/notification.routes";
+import OrganizationRoutes from "./modules/organization/organization.routes";
 import { TeamRoutes } from "./modules/team/team.routes";
 import { UserRoutes } from "./modules/user/user.routes";
 
@@ -49,6 +50,7 @@ app.use("/api/v1/users", UserRoutes);
 app.use("/api/v1/teams", TeamRoutes);
 app.use("/api/v1/analytics", AnalyticsRoutes);
 app.use("/api/v1/notifications", NotificationRoutes);
+app.use("/api/v1/organizations", OrganizationRoutes);
 
 // Default route for testing
 app.get("/", (_req, res) => {

@@ -8,7 +8,7 @@ import { IMember, ITeam } from "./team.interface";
 import { Team } from "./team.model";
 
 // Create a new team
-const createTeam = async (data: any) => {
+const createTeam = async (data: any, organizationId: string) => {
   if (!data.name || !data.description) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
@@ -16,36 +16,41 @@ const createTeam = async (data: any) => {
     );
   }
 
-  const lastTeam = await Team.findOne().sort({ order: -1 });
+  // Get last team order within this organization
+  const lastTeam = await Team.findOne({ organizationId }).sort({ order: -1 });
   const order = lastTeam?.order ? lastTeam.order + 1 : 1;
 
   const newTeam = await Team.create({
     ...data,
+    organizationId,
     order,
   });
 
-  // Invalidate teams cache
-  await cacheService.invalidatePattern("teams:*");
-  console.log("🗑️  Cache invalidated: teams:*");
+  // Invalidate teams cache for this organization
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+  console.log(`🗑️  Cache invalidated: teams:${organizationId}:*`);
 
   return newTeam;
 };
 
 // Get all teams with search, filter, sort, pagination
-const getAllTeams = async (query: any) => {
-  // Generate cache key based on query params
-  const cacheKey = `teams:all:${JSON.stringify(query)}`;
+const getAllTeams = async (query: any, organizationId: string) => {
+  // Generate cache key based on query params and organization
+  const cacheKey = `teams:${organizationId}:all:${JSON.stringify(query)}`;
 
   // Try to get from cache
   const cached = await cacheService.get<{ data: ITeam[]; meta: any }>(cacheKey);
   if (cached) {
-    console.log("✅ Cache hit for teams");
+    console.log(`✅ Cache hit for teams (org: ${organizationId})`);
     return cached;
   }
 
-  console.log("❌ Cache miss for teams - fetching from DB");
+  console.log(`❌ Cache miss for teams (org: ${organizationId}) - fetching from DB`);
   const searchableFields = ["name", "members.name"];
-  const queryBuilder = new QueryBuilder<ITeam>(Team.find(), query);
+  
+  // Add organization filter to base query
+  const baseQuery = Team.find({ organizationId });
+  const queryBuilder = new QueryBuilder<ITeam>(baseQuery, query);
   const teamQuery = queryBuilder
     .search(searchableFields)
     .filter()
@@ -67,20 +72,20 @@ const getAllTeams = async (query: any) => {
 };
 
 // Get single team
-const getTeamById = async (id: string) => {
+const getTeamById = async (id: string, organizationId: string) => {
   if (!Types.ObjectId.isValid(id))
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
 
   // Try cache first
-  const cacheKey = `team:${id}`;
+  const cacheKey = `team:${organizationId}:${id}`;
   const cached = await cacheService.get<ITeam>(cacheKey);
   if (cached) {
-    console.log(`✅ Cache hit for team ${id}`);
+    console.log(`✅ Cache hit for team ${id} (org: ${organizationId})`);
     return cached;
   }
 
-  console.log(`❌ Cache miss for team ${id}`);
-  const team = await Team.findById(id);
+  console.log(`❌ Cache miss for team ${id} (org: ${organizationId})`);
+  const team = await Team.findOne({ _id: id, organizationId });
 
   // Cache for 5 minutes
   if (team) {
@@ -91,13 +96,12 @@ const getTeamById = async (id: string) => {
 };
 
 // Update team
-
 const updateTeam = async (
   teamId: string,
+  organizationId: string,
   data: any,
   newMembers?: { name: string }[]
 ) => {
-  // console.log("Updating team:", data)
   if (!Types.ObjectId.isValid(teamId)) {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
   }
@@ -110,47 +114,51 @@ const updateTeam = async (
     };
   }
 
-  const result = await Team.findByIdAndUpdate(teamId, updateData, {
-    new: true,
-    runValidators: true,
-  });
+  const result = await Team.findOneAndUpdate(
+    { _id: teamId, organizationId },
+    updateData,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
 
   // Invalidate cache
-  await cacheService.delete(`team:${teamId}`);
-  await cacheService.invalidatePattern("teams:*");
-  console.log(`🗑️  Cache invalidated: team:${teamId} and teams:*`);
+  await cacheService.delete(`team:${organizationId}:${teamId}`);
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+  console.log(`🗑️  Cache invalidated: team:${organizationId}:${teamId} and teams:${organizationId}:*`);
 
   return result;
 };
 
 // Delete single team
-const deleteTeam = async (id: string) => {
+const deleteTeam = async (id: string, organizationId: string) => {
   if (!Types.ObjectId.isValid(id))
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
 
-  const result = await Team.findByIdAndDelete(id);
+  const result = await Team.findOneAndDelete({ _id: id, organizationId });
 
   // Invalidate cache
-  await cacheService.delete(`team:${id}`);
-  await cacheService.invalidatePattern("teams:*");
-  console.log(`🗑️  Cache invalidated after delete: team:${id}`);
+  await cacheService.delete(`team:${organizationId}:${id}`);
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+  console.log(`🗑️  Cache invalidated after delete: team:${organizationId}:${id}`);
 
   return result;
 };
 
 // Bulk delete teams
-const bulkDeleteTeams = async (ids: string[]) => {
+const bulkDeleteTeams = async (ids: string[], organizationId: string) => {
   ids.forEach((id) => {
     if (!Types.ObjectId.isValid(id))
       throw new AppError(httpStatus.BAD_REQUEST, `Invalid ID ${id}`);
   });
 
-  const result = await Team.deleteMany({ _id: { $in: ids } });
+  const result = await Team.deleteMany({ _id: { $in: ids }, organizationId });
 
-  // Invalidate all cache
-  await cacheService.invalidatePattern("team:*");
-  await cacheService.invalidatePattern("teams:*");
-  console.log("🗑️  Cache invalidated after bulk delete");
+  // Invalidate all cache for this organization
+  await cacheService.invalidatePattern(`team:${organizationId}:*`);
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+  console.log(`🗑️  Cache invalidated after bulk delete (org: ${organizationId})`);
 
   return result;
 };
@@ -158,6 +166,7 @@ const bulkDeleteTeams = async (ids: string[]) => {
 // Update tri-state approval
 const updateApprovalStatus = async (
   teamId: string,
+  organizationId: string,
   field: "managerApproved" | "directorApproved",
   value: "0" | "1" | "-1"
 ) => {
@@ -165,21 +174,33 @@ const updateApprovalStatus = async (
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
   }
 
-  return Team.findByIdAndUpdate(teamId, { [field]: value }, { new: true });
+  return Team.findOneAndUpdate(
+    { _id: teamId, organizationId },
+    { [field]: value },
+    { new: true }
+  );
 };
 
 // Update order for drag & drop
-const updateTeamOrder = async (orderList: { id: string; order: number }[]) => {
+const updateTeamOrder = async (
+  orderList: { id: string; order: number }[],
+  organizationId: string
+) => {
   const ops = orderList.map((o) =>
-    Team.findByIdAndUpdate(o.id, { order: o.order })
+    Team.findOneAndUpdate({ _id: o.id, organizationId }, { order: o.order })
   );
   await Promise.all(ops);
+  
+  // Invalidate cache
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+  
   return true;
 };
 
 // Update a team member
 const updateMember = async (
   teamId: string,
+  organizationId: string,
   memberId: string,
   data: IMember
 ) => {
@@ -187,19 +208,26 @@ const updateMember = async (
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid ID");
 
   return Team.updateOne(
-    { _id: teamId, "members._id": memberId },
+    { _id: teamId, organizationId, "members._id": memberId },
     { $set: { "members.$": data } }
   );
 };
 
 // Delete a team member
-const deleteMember = async (teamId: string, memberId: string) => {
+const deleteMember = async (
+  teamId: string,
+  organizationId: string,
+  memberId: string
+) => {
   if (!Types.ObjectId.isValid(teamId) || !Types.ObjectId.isValid(memberId))
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid ID");
 
-  return Team.findByIdAndUpdate(teamId, {
-    $pull: { members: { _id: memberId } },
-  });
+  return Team.findOneAndUpdate(
+    { _id: teamId, organizationId },
+    {
+      $pull: { members: { _id: memberId } },
+    }
+  );
 };
 
 export const TeamService = {

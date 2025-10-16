@@ -6,9 +6,9 @@ import sendResponse from "../../utils/sendResponse";
 
 // Create a new team
 const createTeam = async (req: Request, res: Response, next: NextFunction) => {
-
   try {
-    const newTeam = await TeamService.createTeam(req.body);
+    const organizationId = req.organizationId as string;
+    const newTeam = await TeamService.createTeam(req.body, organizationId);
     sendResponse(res, {
       statusCode: httpStatus.CREATED,
       success: true,
@@ -22,9 +22,9 @@ const createTeam = async (req: Request, res: Response, next: NextFunction) => {
 
 // Get all teams
 const getAllTeams = async (req: Request, res: Response, next: NextFunction) => {
-
   try {
-    const result = await TeamService.getAllTeams(req.query);
+    const organizationId = req.organizationId as string;
+    const result = await TeamService.getAllTeams(req.query, organizationId);
    
     sendResponse(res, {
       statusCode: httpStatus.OK,
@@ -40,7 +40,8 @@ const getAllTeams = async (req: Request, res: Response, next: NextFunction) => {
 // Get single team
 const getTeamById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const team = await TeamService.getTeamById(req.params.teamId);
+    const organizationId = req.organizationId as string;
+    const team = await TeamService.getTeamById(req.params.teamId, organizationId);
     if (!team) throw new AppError(httpStatus.NOT_FOUND, "Team not found");
     sendResponse(res, {
       statusCode: httpStatus.OK,
@@ -55,7 +56,12 @@ const getTeamById = async (req: Request, res: Response, next: NextFunction) => {
 // Update team
 const updateTeam = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const updatedTeam = await TeamService.updateTeam(req.params.teamId, req.body);
+    const organizationId = req.organizationId as string;
+    const updatedTeam = await TeamService.updateTeam(
+      req.params.teamId,
+      organizationId,
+      req.body
+    );
     
     if (!updatedTeam) throw new AppError(httpStatus.NOT_FOUND, "Team not found");
     sendResponse(res, {
@@ -72,7 +78,8 @@ const updateTeam = async (req: Request, res: Response, next: NextFunction) => {
 // Delete single team
 const deleteTeam = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const deletedTeam = await TeamService.deleteTeam(req.params.teamId);
+    const organizationId = req.organizationId as string;
+    const deletedTeam = await TeamService.deleteTeam(req.params.teamId, organizationId);
     if (!deletedTeam) throw new AppError(httpStatus.NOT_FOUND, "Team not found");
     sendResponse(res, {
       statusCode: httpStatus.OK,
@@ -88,7 +95,8 @@ const deleteTeam = async (req: Request, res: Response, next: NextFunction) => {
 // Bulk delete teams
 const bulkDeleteTeams = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await TeamService.bulkDeleteTeams(req.body.ids);
+    const organizationId = req.organizationId as string;
+    await TeamService.bulkDeleteTeams(req.body.ids, organizationId);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -103,8 +111,14 @@ const bulkDeleteTeams = async (req: Request, res: Response, next: NextFunction) 
 // Update tri-state approval status
 const updateApprovalStatus = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const organizationId = req.organizationId as string;
     const { field, value } = req.body;
-    const updated = await TeamService.updateApprovalStatus(req.params.teamId, field, value);
+    const updated = await TeamService.updateApprovalStatus(
+      req.params.teamId,
+      organizationId,
+      field,
+      value
+    );
     if (!updated) throw new AppError(httpStatus.NOT_FOUND, "Team not found");
     sendResponse(res, {
       statusCode: httpStatus.OK,
@@ -120,7 +134,8 @@ const updateApprovalStatus = async (req: Request, res: Response, next: NextFunct
 // Update team order (drag & drop)
 const updateTeamOrder = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await TeamService.updateTeamOrder(req.body.orderList);
+    const organizationId = req.organizationId as string;
+    await TeamService.updateTeamOrder(req.body.orderList, organizationId);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -134,9 +149,14 @@ const updateTeamOrder = async (req: Request, res: Response, next: NextFunction) 
 
 // Update a team member
 const updateMember = async (req: Request, res: Response, next: NextFunction) => {
-
   try {
-    await TeamService.updateMember(req.params.teamId, req.params.memberId, req.body);
+    const organizationId = req.organizationId as string;
+    await TeamService.updateMember(
+      req.params.teamId,
+      organizationId,
+      req.params.memberId,
+      req.body
+    );
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -151,7 +171,8 @@ const updateMember = async (req: Request, res: Response, next: NextFunction) => 
 // Delete a team member
 const deleteMember = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await TeamService.deleteMember(req.params.teamId, req.params.memberId);
+    const organizationId = req.organizationId as string;
+    await TeamService.deleteMember(req.params.teamId, organizationId, req.params.memberId);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,

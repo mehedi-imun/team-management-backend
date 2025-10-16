@@ -4,6 +4,11 @@ import { IUser } from "./user.interface";
 
 const userSchema = new Schema<IUser>(
   {
+    organizationId: {
+      type: String,
+      required: [true, "Organization ID is required"],
+      index: true,
+    },
     email: {
       type: String,
       required: [true, "Email is required"],
@@ -84,5 +89,8 @@ userSchema.methods.comparePassword = async function (
 
 // Add index for email
 userSchema.index({ email: 1 });
+userSchema.index({ organizationId: 1 });
+userSchema.index({ organizationId: 1, email: 1 });
+userSchema.index({ organizationId: 1, role: 1 });
 
 export const User = model<IUser>("User", userSchema);
