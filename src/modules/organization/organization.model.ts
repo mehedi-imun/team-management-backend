@@ -1,4 +1,4 @@
-import { Schema, model, Model, Types } from "mongoose";
+import { model, Model, Schema } from "mongoose";
 import { IOrganization } from "./organization.interface";
 
 // Extended interface for instance methods
@@ -168,8 +168,7 @@ const organizationSchema = new Schema<
 
     // Owner
     ownerId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       required: [true, "Organization owner is required"],
       index: true,
     },
@@ -184,7 +183,7 @@ const organizationSchema = new Schema<
     timestamps: true, // Automatically adds createdAt and updatedAt
     toJSON: {
       virtuals: true,
-      transform: function (doc, ret) {
+      transform: function (doc, ret: any) {
         delete ret.__v;
         return ret;
       },
@@ -201,7 +200,7 @@ organizationSchema.index({ plan: 1 });
 organizationSchema.index({ isActive: 1 });
 
 // Virtual fields
-organizationSchema.virtual("isOnTrial").get(function () {
+organizationSchema.virtual("isOnTrial").get(function (this: IOrganization) {
   return (
     this.subscriptionStatus === "trialing" &&
     this.trialEndsAt &&
@@ -209,18 +208,18 @@ organizationSchema.virtual("isOnTrial").get(function () {
   );
 });
 
-organizationSchema.virtual("daysLeftInTrial").get(function () {
+organizationSchema.virtual("daysLeftInTrial").get(function (this: IOrganization) {
   if (!this.trialEndsAt || this.subscriptionStatus !== "trialing") return 0;
   const diff = this.trialEndsAt.getTime() - Date.now();
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 });
 
-organizationSchema.virtual("usersPercentage").get(function () {
+organizationSchema.virtual("usersPercentage").get(function (this: IOrganization) {
   if (this.limits.maxUsers === 0) return 0;
   return Math.round((this.usage.users / this.limits.maxUsers) * 100);
 });
 
-organizationSchema.virtual("teamsPercentage").get(function () {
+organizationSchema.virtual("teamsPercentage").get(function (this: IOrganization) {
   if (this.limits.maxTeams === 0) return 0;
   return Math.round((this.usage.teams / this.limits.maxTeams) * 100);
 });
@@ -228,6 +227,7 @@ organizationSchema.virtual("teamsPercentage").get(function () {
 // Pre-save middleware
 organizationSchema.pre("save", function (next) {
   // Set limits based on plan (if plan changed)
+  // @ts-ignore - isModified is available on document instance
   if (this.isModified("plan")) {
     switch (this.plan) {
       case "free":
@@ -309,13 +309,7 @@ organizationSchema.statics.getPlanLimits = function (
       maxUsers: 50,
       maxTeams: 20,
       maxStorage: "50GB",
-      features: [
-        "basic",
-        "approvals",
-        "analytics",
-        "export",
-        "email_support",
-      ],
+      features: ["basic", "approvals", "analytics", "export", "email_support"],
     },
     business: {
       maxUsers: 200,
