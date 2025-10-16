@@ -1,0 +1,51 @@
+import { z } from 'zod';
+
+// User roles enum
+export const UserRoleEnum = z.enum(['Admin', 'Manager', 'Director']);
+
+// Create user schema
+export const createUserSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  password: z
+    .string()
+    .min(6, 'Password must be at least 6 characters')
+    .max(100, 'Password too long'),
+  name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
+  role: UserRoleEnum,
+});
+
+// Update user schema
+export const updateUserSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  role: UserRoleEnum.optional(),
+  isActive: z.boolean().optional(),
+});
+
+// Login schema
+export const loginSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+// Change password schema
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z
+    .string()
+    .min(6, 'New password must be at least 6 characters')
+    .max(100, 'Password too long'),
+});
+
+// Forgot password schema
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Invalid email format'),
+});
+
+// Reset password schema
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+  password: z
+    .string()
+    .min(6, 'Password must be at least 6 characters')
+    .max(100, 'Password too long'),
+});

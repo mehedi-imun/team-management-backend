@@ -5,6 +5,7 @@ import AppError from "../../errors/AppError";
 import QueryBuilder from "../../utils/queryBuilder";
 import { IMember, ITeam } from "./team.interface";
 import { Team } from "./team.model";
+import { cacheService } from "../../services/cache.service";
 
 // Create a new team
 const createTeam = async (data: any) => {
@@ -23,11 +24,26 @@ const createTeam = async (data: any) => {
     order,
   });
 
+  // Invalidate teams cache
+  await cacheService.invalidatePattern('teams:*');
+  console.log('🗑️  Cache invalidated: teams:*');
+
   return newTeam;
 };
 
 // Get all teams with search, filter, sort, pagination
 const getAllTeams = async (query: any) => {
+  // Generate cache key based on query params
+  const cacheKey = `teams:all:${JSON.stringify(query)}`;
+  
+  // Try to get from cache
+  const cached = await cacheService.get<{ data: ITeam[]; meta: any }>(cacheKey);
+  if (cached) {
+    console.log('✅ Cache hit for teams');
+    return cached;
+  }
+
+  console.log('❌ Cache miss for teams - fetching from DB');
   const searchableFields = ["name", "members.name"];
   const queryBuilder = new QueryBuilder<ITeam>(Team.find(), query);
   const teamQuery = queryBuilder
@@ -42,14 +58,36 @@ const getAllTeams = async (query: any) => {
     queryBuilder.countTotal(),
   ]);
 
-  return { data, meta };
+  const result = { data, meta };
+  
+  // Cache the result for 5 minutes
+  await cacheService.set(cacheKey, result, 300);
+  
+  return result;
 };
 
 // Get single team
 const getTeamById = async (id: string) => {
   if (!Types.ObjectId.isValid(id))
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
-  return Team.findById(id);
+  
+  // Try cache first
+  const cacheKey = `team:${id}`;
+  const cached = await cacheService.get<ITeam>(cacheKey);
+  if (cached) {
+    console.log(`✅ Cache hit for team ${id}`);
+    return cached;
+  }
+
+  console.log(`❌ Cache miss for team ${id}`);
+  const team = await Team.findById(id);
+  
+  // Cache for 5 minutes
+  if (team) {
+    await cacheService.set(cacheKey, team, 300);
+  }
+  
+  return team;
 };
 
 // Update team
@@ -69,10 +107,17 @@ const updateTeam = async (teamId: string, data: any, newMembers?: { name: string
     };
   }
 
-  return Team.findByIdAndUpdate(teamId, updateData, {
+  const result = await Team.findByIdAndUpdate(teamId, updateData, {
     new: true,
     runValidators: true,
   });
+
+  // Invalidate cache
+  await cacheService.delete(`team:${teamId}`);
+  await cacheService.invalidatePattern('teams:*');
+  console.log(`🗑️  Cache invalidated: team:${teamId} and teams:*`);
+
+  return result;
 };
 
 
@@ -80,7 +125,15 @@ const updateTeam = async (teamId: string, data: any, newMembers?: { name: string
 const deleteTeam = async (id: string) => {
   if (!Types.ObjectId.isValid(id))
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
-  return Team.findByIdAndDelete(id);
+  
+  const result = await Team.findByIdAndDelete(id);
+  
+  // Invalidate cache
+  await cacheService.delete(`team:${id}`);
+  await cacheService.invalidatePattern('teams:*');
+  console.log(`🗑️  Cache invalidated after delete: team:${id}`);
+  
+  return result;
 };
 
 // Bulk delete teams
@@ -89,7 +142,15 @@ const bulkDeleteTeams = async (ids: string[]) => {
     if (!Types.ObjectId.isValid(id))
       throw new AppError(httpStatus.BAD_REQUEST, `Invalid ID ${id}`);
   });
-  return Team.deleteMany({ _id: { $in: ids } });
+  
+  const result = await Team.deleteMany({ _id: { $in: ids } });
+  
+  // Invalidate all cache
+  await cacheService.invalidatePattern('team:*');
+  await cacheService.invalidatePattern('teams:*');
+  console.log('🗑️  Cache invalidated after bulk delete');
+  
+  return result;
 };
 
 // Update tri-state approval
