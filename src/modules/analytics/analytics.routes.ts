@@ -1,9 +1,9 @@
 import { Router } from "express";
+import AppError from "../../errors/AppError";
 import { authenticate } from "../../middleware/authenticate";
 import { authorize } from "../../middleware/authorize";
 import { authorizeOrganizationOwner } from "../../middleware/authorizeOrganizationOwner";
 import { AnalyticsController } from "./analytics.controller";
-import AppError from "../../errors/AppError";
 
 const router = Router();
 
@@ -12,12 +12,15 @@ const authorizeAdminOrOrgOwner = (req: any, res: any, next: any) => {
   const user = req.user;
   const isSuperAdminOrAdmin = ["SuperAdmin", "Admin"].includes(user?.role);
   const isOrgOwner = user?.isOrganizationOwner === true;
-  
+
   if (isSuperAdminOrAdmin || isOrgOwner) {
     return next();
   }
-  
-  throw new AppError(403, "Forbidden - Requires SuperAdmin, Admin, or Organization Owner");
+
+  throw new AppError(
+    403,
+    "Forbidden - Requires SuperAdmin, Admin, or Organization Owner"
+  );
 };
 
 // Platform-level analytics (SuperAdmin/Admin only)
