@@ -290,6 +290,81 @@ const getUserStats = async () => {
   return stats;
 };
 
+const getMyOrganizationAnalytics = async (organizationId: string) => {
+  // Try cache
+  const cacheKey = `analytics:organization:${organizationId}`;
+  const cached = await cacheService.get(cacheKey);
+  if (cached) {
+    console.log(`✅ Cache hit for organization ${organizationId} analytics`);
+    return cached;
+  }
+
+  // Get organization details
+  const organization = await Organization.findById(organizationId).select(
+    "name status plan subscriptionStatus members usage limits"
+  );
+
+  if (!organization) {
+    throw new Error("Organization not found");
+  }
+
+  // Get user stats for this organization
+  const totalMembers = await User.countDocuments({
+    organizationId,
+  });
+  const activeMembers = await User.countDocuments({
+    organizationId,
+    status: "active",
+  });
+  const inactiveMembers = await User.countDocuments({
+    organizationId,
+    status: "inactive",
+  });
+  const pendingMembers = await User.countDocuments({
+    organizationId,
+    status: "pending",
+  });
+
+  // Role distribution
+  const owners = await User.countDocuments({
+    organizationId,
+    isOrganizationOwner: true,
+  });
+  const admins = await User.countDocuments({
+    organizationId,
+    isOrganizationAdmin: true,
+  });
+  const regularMembers = totalMembers - owners - admins;
+
+  const analytics = {
+    organization: {
+      id: organization._id,
+      name: organization.name,
+      status: organization.status,
+      plan: organization.plan,
+      subscriptionStatus: organization.subscriptionStatus,
+    },
+    members: {
+      total: totalMembers,
+      active: activeMembers,
+      inactive: inactiveMembers,
+      pending: pendingMembers,
+    },
+    roles: {
+      owners,
+      admins,
+      members: regularMembers,
+    },
+    usage: organization.usage,
+    limits: organization.limits,
+  };
+
+  // Cache for 5 minutes
+  await cacheService.set(cacheKey, analytics, 300);
+
+  return analytics;
+};
+
 export const AnalyticsService = {
   getAnalyticsSummary,
   getTeamDistribution,
@@ -297,4 +372,5 @@ export const AnalyticsService = {
   getPlatformAnalytics,
   getOrganizationStats,
   getUserStats,
+  getMyOrganizationAnalytics,
 };

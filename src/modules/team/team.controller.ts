@@ -8,7 +8,9 @@ import { TeamService } from "./team.service";
 const createTeam = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const organizationId = req.organizationId as string;
-    const newTeam = await TeamService.createTeam(req.body, organizationId);
+    const userId = req.user?._id;
+    const isOrgOwner = req.user?.isOrganizationOwner || false;
+    const newTeam = await TeamService.createTeam(req.body, organizationId, userId, isOrgOwner);
     sendResponse(res, {
       statusCode: httpStatus.CREATED,
       success: true,

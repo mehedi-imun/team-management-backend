@@ -113,6 +113,38 @@ const getUserStats = async (
   }
 };
 
+const getMyOrganizationAnalytics = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user as any;
+    
+    if (!user?.organizationId) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "User is not associated with an organization",
+        data: null,
+      });
+    }
+
+    const result = await AnalyticsService.getMyOrganizationAnalytics(
+      user.organizationId
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Organization analytics retrieved successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const AnalyticsController = {
   getSummary,
   getTeamDistribution,
@@ -120,4 +152,5 @@ export const AnalyticsController = {
   getPlatformAnalytics,
   getOrganizationStats,
   getUserStats,
+  getMyOrganizationAnalytics,
 };

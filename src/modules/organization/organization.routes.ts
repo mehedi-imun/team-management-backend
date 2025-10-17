@@ -151,4 +151,38 @@ router.post(
  */
 router.get("/:id/usage", organizationController.getUsageStats);
 
+/**
+ * @route   GET /api/v1/organizations/:id/members
+ * @desc    Get all members of an organization
+ * @access  Private (Owner/Admin)
+ */
+router.get("/:id/members", organizationController.getOrganizationMembers);
+
+/**
+ * @route   POST /api/v1/organizations/:id/members
+ * @desc    Add member to organization
+ * @access  Private (Owner/Admin)
+ */
+router.post("/:id/members", organizationController.addOrganizationMember);
+
+/**
+ * @route   PATCH /api/v1/organizations/:id/members/:userId
+ * @desc    Update member role/permissions
+ * @access  Private (Owner/Admin)
+ */
+router.patch(
+  "/:id/members/:userId",
+  organizationController.updateOrganizationMember
+);
+
+/**
+ * @route   DELETE /api/v1/organizations/:id/members/:userId
+ * @desc    Remove member from organization
+ * @access  Private (Owner/Admin)
+ */
+router.delete(
+  "/:id/members/:userId",
+  organizationController.removeOrganizationMember
+);
+
 export default router;

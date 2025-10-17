@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import AppError from "../../errors/AppError";
 import { cacheService } from "../../services/cache.service";
 import QueryBuilder from "../../utils/queryBuilder";
+import { User } from "../user/user.model";
 import {
   IOrganization,
   IOrganizationCreate,
@@ -538,6 +539,280 @@ class OrganizationService {
       organization,
       temporaryPassword: isNewUser ? temporaryPassword : "",
     };
+  }
+
+  /**
+   * Get organization members with pagination and filtering
+   */
+  async getOrganizationMembers(
+    organizationId: string,
+    currentUserId: string,
+    query: any
+  ): Promise<{ data: any[]; meta: any }> {
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+      throw new AppError(404, "Organization not found");
+    }
+
+    // Check if user has permission (owner or admin)
+    const currentUser = await User.findById(currentUserId);
+    if (!currentUser) {
+      throw new AppError(401, "User not found");
+    }
+
+    // Allow access if:
+    // 1. User belongs to the organization
+    // 2. User is SuperAdmin or Admin (can view any organization)
+    const belongsToOrg = currentUser.organizationId === organizationId;
+    const isPlatformAdmin = ["SuperAdmin", "Admin"].includes(currentUser.role);
+
+    if (!belongsToOrg && !isPlatformAdmin) {
+      throw new AppError(403, "You don't have permission to view members");
+    }
+
+    // Build query
+    const queryBuilder = new QueryBuilder(
+      User.find({ organizationId }).select("-password") as any,
+      query
+    )
+      .search(["name", "email"])
+      .filter()
+      .sort()
+      .paginate()
+      .fields();
+
+    const data = await queryBuilder.build();
+    const meta = await queryBuilder.countTotal();
+
+    return { data, meta };
+  }
+
+  /**
+   * Add member to organization
+   */
+  async addOrganizationMember(
+    organizationId: string,
+    currentUserId: string,
+    memberData: {
+      email: string;
+      name: string;
+      role?: string;
+      isOrganizationAdmin?: boolean;
+      password?: string;
+    }
+  ): Promise<any> {
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+      throw new AppError(404, "Organization not found");
+    }
+
+    // Check if user has permission (owner or admin)
+    const currentUser = await User.findById(currentUserId);
+    if (!currentUser) {
+      throw new AppError(401, "User not found");
+    }
+
+    // Allow access if:
+    // 1. User belongs to org AND is owner/admin
+    // 2. User is platform SuperAdmin/Admin
+    const belongsToOrg = currentUser.organizationId === organizationId;
+    const isPlatformAdmin = ["SuperAdmin", "Admin"].includes(currentUser.role);
+    const isOrgAdmin =
+      currentUser.isOrganizationOwner || currentUser.isOrganizationAdmin;
+
+    if (!isPlatformAdmin && (!belongsToOrg || !isOrgAdmin)) {
+      throw new AppError(403, "You don't have permission to add members");
+    }
+
+    // Check if organization can add more users
+    if (!organization.canAddUser()) {
+      throw new AppError(
+        403,
+        `Organization has reached the maximum user limit (${organization.limits.maxUsers})`
+      );
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: memberData.email });
+    if (existingUser) {
+      // If user exists but in different organization
+      if (
+        existingUser.organizationId &&
+        existingUser.organizationId !== organizationId
+      ) {
+        throw new AppError(
+          409,
+          "User already belongs to another organization"
+        );
+      }
+      // If user exists and already in this organization
+      if (existingUser.organizationId === organizationId) {
+        throw new AppError(409, "User is already a member of this organization");
+      }
+    }
+
+    // Create new user or update existing
+    let user;
+    if (existingUser) {
+      // Update existing user
+      existingUser.organizationId = organizationId;
+      existingUser.role = (memberData.role || "Member") as "SuperAdmin" | "Admin" | "Member";
+      existingUser.isOrganizationAdmin = memberData.isOrganizationAdmin || false;
+      await existingUser.save();
+      user = existingUser;
+    } else {
+      // Create new user
+      const password = memberData.password || nanoid(12);
+      user = await User.create({
+        email: memberData.email,
+        name: memberData.name,
+        password,
+        role: (memberData.role || "Member") as "SuperAdmin" | "Admin" | "Member",
+        organizationId,
+        isOrganizationAdmin: memberData.isOrganizationAdmin || false,
+      });
+    }
+
+    // Increment organization user count
+    await organization.incrementUsage("users");
+
+    // Invalidate cache
+    await cacheService.delete(`organization:${organizationId}`);
+    await cacheService.delete(`organizations:user:${currentUserId}`);
+
+    return user;
+  }
+
+  /**
+   * Update organization member
+   */
+  async updateOrganizationMember(
+    organizationId: string,
+    currentUserId: string,
+    targetUserId: string,
+    updateData: {
+      role?: string;
+      isOrganizationAdmin?: boolean;
+      isActive?: boolean;
+    }
+  ): Promise<any> {
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+      throw new AppError(404, "Organization not found");
+    }
+
+    // Check if user has permission (owner or admin)
+    const currentUser = await User.findById(currentUserId);
+    if (!currentUser) {
+      throw new AppError(401, "User not found");
+    }
+
+    // Allow access if:
+    // 1. User belongs to org AND is owner/admin
+    // 2. User is platform SuperAdmin/Admin
+    const belongsToOrg = currentUser.organizationId === organizationId;
+    const isPlatformAdmin = ["SuperAdmin", "Admin"].includes(currentUser.role);
+    const isOrgAdmin =
+      currentUser.isOrganizationOwner || currentUser.isOrganizationAdmin;
+
+    if (!isPlatformAdmin && (!belongsToOrg || !isOrgAdmin)) {
+      throw new AppError(403, "You don't have permission to update members");
+    }
+
+    // Find target user
+    const targetUser = await User.findById(targetUserId);
+    if (!targetUser || targetUser.organizationId !== organizationId) {
+      throw new AppError(404, "Member not found in this organization");
+    }
+
+    // Prevent modifying owner
+    if (targetUser.isOrganizationOwner) {
+      throw new AppError(403, "Cannot modify organization owner");
+    }
+
+    // Prevent self-modification
+    if (targetUserId === currentUserId) {
+      throw new AppError(403, "Cannot modify your own permissions");
+    }
+
+    // Update user
+    if (updateData.role !== undefined) {
+      targetUser.role = updateData.role as "SuperAdmin" | "Admin" | "Member";
+    }
+    if (updateData.isOrganizationAdmin !== undefined) {
+      targetUser.isOrganizationAdmin = updateData.isOrganizationAdmin;
+    }
+    if (updateData.isActive !== undefined) {
+      targetUser.isActive = updateData.isActive;
+    }
+
+    await targetUser.save();
+
+    // Invalidate cache
+    await cacheService.delete(`organization:${organizationId}`);
+    await cacheService.delete(`organizations:user:${currentUserId}`);
+
+    return targetUser;
+  }
+
+  /**
+   * Remove member from organization
+   */
+  async removeOrganizationMember(
+    organizationId: string,
+    currentUserId: string,
+    targetUserId: string
+  ): Promise<void> {
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+      throw new AppError(404, "Organization not found");
+    }
+
+    // Check if user has permission (owner or admin)
+    const currentUser = await User.findById(currentUserId);
+    if (!currentUser) {
+      throw new AppError(401, "User not found");
+    }
+
+    // Allow access if:
+    // 1. User belongs to org AND is owner/admin
+    // 2. User is platform SuperAdmin/Admin
+    const belongsToOrg = currentUser.organizationId === organizationId;
+    const isPlatformAdmin = ["SuperAdmin", "Admin"].includes(currentUser.role);
+    const isOrgAdmin =
+      currentUser.isOrganizationOwner || currentUser.isOrganizationAdmin;
+
+    if (!isPlatformAdmin && (!belongsToOrg || !isOrgAdmin)) {
+      throw new AppError(403, "You don't have permission to remove members");
+    }
+
+    // Find target user
+    const targetUser = await User.findById(targetUserId);
+    if (!targetUser || targetUser.organizationId !== organizationId) {
+      throw new AppError(404, "Member not found in this organization");
+    }
+
+    // Prevent removing owner
+    if (targetUser.isOrganizationOwner) {
+      throw new AppError(403, "Cannot remove organization owner");
+    }
+
+    // Prevent self-removal
+    if (targetUserId === currentUserId) {
+      throw new AppError(403, "Cannot remove yourself from the organization");
+    }
+
+    // Remove user from organization
+    targetUser.organizationId = undefined;
+    targetUser.isOrganizationAdmin = false;
+    await targetUser.save();
+
+    // Decrement organization user count
+    await organization.decrementUsage("users");
+
+    // Invalidate cache
+    await cacheService.delete(`organization:${organizationId}`);
+    await cacheService.delete(`organizations:user:${currentUserId}`);
   }
 }
 

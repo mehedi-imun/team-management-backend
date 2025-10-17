@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate";
 import { authorize } from "../../middleware/authorize";
+import { authorizeOrganizationOwner } from "../../middleware/authorizeOrganizationOwner";
 import { AnalyticsController } from "./analytics.controller";
 
 const router = Router();
@@ -25,6 +26,14 @@ router.get(
   authenticate,
   authorize("SuperAdmin", "Admin"),
   AnalyticsController.getUserStats
+);
+
+// Organization Owner analytics (for their own organization)
+router.get(
+  "/my-organization",
+  authenticate,
+  authorizeOrganizationOwner,
+  AnalyticsController.getMyOrganizationAnalytics
 );
 
 // Organization-level analytics (Admin/Director)

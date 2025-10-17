@@ -8,7 +8,7 @@ import { IMember, ITeam } from "./team.interface";
 import { Team } from "./team.model";
 
 // Create a new team
-const createTeam = async (data: any, organizationId: string) => {
+const createTeam = async (data: any, organizationId: string, userId?: string, isOrgOwner?: boolean) => {
   if (!data.name || !data.description) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
@@ -20,11 +20,21 @@ const createTeam = async (data: any, organizationId: string) => {
   const lastTeam = await Team.findOne({ organizationId }).sort({ order: -1 });
   const order = lastTeam?.order ? lastTeam.order + 1 : 1;
 
-  const newTeam = await Team.create({
+  // Organization owners don't need approval
+  const teamData = {
     ...data,
     organizationId,
     order,
-  });
+    createdBy: userId || organizationId,
+  };
+
+  // If org owner, auto-approve both manager and director
+  if (isOrgOwner) {
+    teamData.managerApproved = "1";
+    teamData.directorApproved = "1";
+  }
+
+  const newTeam = await Team.create(teamData);
 
   // Invalidate teams cache for this organization
   await cacheService.invalidatePattern(`teams:${organizationId}:*`);

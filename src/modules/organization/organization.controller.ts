@@ -274,6 +274,100 @@ class OrganizationController {
       });
     }
   );
+
+  /**
+   * Get organization members
+   * GET /api/v1/organizations/:id/members
+   */
+  getOrganizationMembers = catchAsync(async (req: Request, res: Response) => {
+    const userId = req.user?._id as string;
+    const result = await organizationService.getOrganizationMembers(
+      req.params.id,
+      userId,
+      req.query
+    );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Organization members retrieved successfully",
+      data: result.data,
+      meta: result.meta,
+    });
+  });
+
+  /**
+   * Add member to organization
+   * POST /api/v1/organizations/:id/members
+   */
+  addOrganizationMember = catchAsync(async (req: Request, res: Response) => {
+    const userId = req.user?._id as string;
+    const { email, name, role, isOrganizationAdmin, password } = req.body;
+
+    const member = await organizationService.addOrganizationMember(
+      req.params.id,
+      userId,
+      {
+        email,
+        name,
+        role: role || "Member",
+        isOrganizationAdmin: isOrganizationAdmin || false,
+        password,
+      }
+    );
+
+    sendResponse(res, {
+      statusCode: 201,
+      success: true,
+      message: "Member added successfully",
+      data: member,
+    });
+  });
+
+  /**
+   * Update organization member
+   * PATCH /api/v1/organizations/:id/members/:userId
+   */
+  updateOrganizationMember = catchAsync(async (req: Request, res: Response) => {
+    const currentUserId = req.user?._id as string;
+    const { userId } = req.params;
+
+    const member = await organizationService.updateOrganizationMember(
+      req.params.id,
+      currentUserId,
+      userId,
+      req.body
+    );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Member updated successfully",
+      data: member,
+    });
+  });
+
+  /**
+   * Remove member from organization
+   * DELETE /api/v1/organizations/:id/members/:userId
+   */
+  removeOrganizationMember = catchAsync(async (req: Request, res: Response) => {
+    const currentUserId = req.user?._id as string;
+    const { userId } = req.params;
+
+    await organizationService.removeOrganizationMember(
+      req.params.id,
+      currentUserId,
+      userId
+    );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Member removed successfully",
+      data: null,
+    });
+  });
 }
 
 export default new OrganizationController();
