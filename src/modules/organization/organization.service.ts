@@ -379,16 +379,18 @@ class OrganizationService {
   /**
    * Get all organizations (platform admin only)
    */
-  async getAllOrganizations(query: any): Promise<{ data: IOrganization[], meta: any }> {
+  async getAllOrganizations(
+    query: any
+  ): Promise<{ data: IOrganization[]; meta: any }> {
     const searchableFields = ["name", "slug", "ownerEmail"];
-    
+
     // Map 'search' to 'searchTerm' for QueryBuilder compatibility
     const mappedQuery = { ...query };
     if (mappedQuery.search) {
       mappedQuery.searchTerm = mappedQuery.search;
       delete mappedQuery.search;
     }
-    
+
     const queryBuilder = new QueryBuilder<IOrganization>(
       Organization.find(),
       mappedQuery
@@ -468,7 +470,7 @@ class OrganizationService {
 
     // Check if user already exists
     let user = await User.findOne({ email: data.ownerEmail });
-    
+
     let temporaryPassword = "";
     let isNewUser = false;
 
@@ -532,7 +534,10 @@ class OrganizationService {
     // Invalidate cache
     await cacheService.delete("organizations:all");
 
-    return { organization, temporaryPassword: isNewUser ? temporaryPassword : "" };
+    return {
+      organization,
+      temporaryPassword: isNewUser ? temporaryPassword : "",
+    };
   }
 }
 

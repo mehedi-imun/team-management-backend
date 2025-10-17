@@ -14,14 +14,14 @@ import { User } from "./user.model";
 // Get all users with pagination, search, filter
 const getAllUsers = async (query: any) => {
   const searchableFields = ["name", "email"];
-  
+
   // Map 'search' to 'searchTerm' for QueryBuilder compatibility
   const mappedQuery = { ...query };
   if (mappedQuery.search) {
     mappedQuery.searchTerm = mappedQuery.search;
     delete mappedQuery.search;
   }
-  
+
   const queryBuilder = new QueryBuilder<IUser>(User.find(), mappedQuery);
 
   const userQuery = queryBuilder

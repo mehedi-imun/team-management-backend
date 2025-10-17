@@ -268,7 +268,8 @@ class OrganizationController {
       sendResponse(res, {
         statusCode: 201,
         success: true,
-        message: "Organization created successfully. Owner will receive setup instructions via email.",
+        message:
+          "Organization created successfully. Owner will receive setup instructions via email.",
         data: result,
       });
     }

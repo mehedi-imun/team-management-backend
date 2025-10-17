@@ -5,8 +5,8 @@ import { validateRequest } from "../../middleware/validateRequest";
 import organizationController from "./organization.controller";
 import {
   checkSlugSchema,
-  createOrganizationSchema,
   createOrganizationForClientSchema,
+  createOrganizationSchema,
   updateOrganizationSchema,
   upgradePlanSchema,
 } from "./organization.validation";

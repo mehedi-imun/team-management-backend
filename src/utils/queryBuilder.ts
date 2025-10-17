@@ -32,7 +32,14 @@ class QueryBuilder<T> {
    */
   filter(): this {
     const queryObj = { ...this.query };
-    const excludeFields = ["searchTerm", "sort", "limit", "page", "fields", "search"];
+    const excludeFields = [
+      "searchTerm",
+      "sort",
+      "limit",
+      "page",
+      "fields",
+      "search",
+    ];
 
     // Remove reserved fields
     for (const field of excludeFields) {
@@ -55,7 +62,8 @@ class QueryBuilder<T> {
    * Apply sorting based on query, defaulting to newest first.
    */
   sort(): this {
-    const sortBy = (this.query?.sort as string)?.split(",").join(" ") || "-createdAt";
+    const sortBy =
+      (this.query?.sort as string)?.split(",").join(" ") || "-createdAt";
     this.modelQuery = this.modelQuery.sort(sortBy);
     return this;
   }
