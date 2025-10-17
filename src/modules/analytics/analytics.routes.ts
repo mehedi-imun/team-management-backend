@@ -3,8 +3,22 @@ import { authenticate } from "../../middleware/authenticate";
 import { authorize } from "../../middleware/authorize";
 import { authorizeOrganizationOwner } from "../../middleware/authorizeOrganizationOwner";
 import { AnalyticsController } from "./analytics.controller";
+import AppError from "../../errors/AppError";
 
 const router = Router();
+
+// Custom middleware: Allow SuperAdmin/Admin OR Organization Owners
+const authorizeAdminOrOrgOwner = (req: any, res: any, next: any) => {
+  const user = req.user;
+  const isSuperAdminOrAdmin = ["SuperAdmin", "Admin"].includes(user?.role);
+  const isOrgOwner = user?.isOrganizationOwner === true;
+  
+  if (isSuperAdminOrAdmin || isOrgOwner) {
+    return next();
+  }
+  
+  throw new AppError(403, "Forbidden - Requires SuperAdmin, Admin, or Organization Owner");
+};
 
 // Platform-level analytics (SuperAdmin/Admin only)
 router.get(
@@ -14,10 +28,11 @@ router.get(
   AnalyticsController.getPlatformAnalytics
 );
 
+// Organization stats - SuperAdmin/Admin get all orgs, Organization Owners get their own
 router.get(
   "/organizations",
   authenticate,
-  authorize("SuperAdmin", "Admin"),
+  authorizeAdminOrOrgOwner,
   AnalyticsController.getOrganizationStats
 );
 
