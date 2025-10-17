@@ -14,35 +14,53 @@ const router = express.Router();
 // All user routes require authentication
 router.use(authenticate);
 
-// Get all users (Admin only)
-router.get("/", authorize("Admin"), UserController.getAllUsers);
+// Get all users (SuperAdmin/Admin only)
+router.get("/", authorize("SuperAdmin", "Admin"), UserController.getAllUsers);
 
 // Get single user
 router.get("/:userId", UserController.getUserById);
 
-// Create user (Admin only)
+// Create user (SuperAdmin/Admin only)
 router.post(
   "/",
-  authorize("Admin"),
+  authorize("SuperAdmin", "Admin"),
   validateRequest(createUserSchema),
   UserController.createUser
 );
 
-// Update user (Admin only)
+// Update user role (SuperAdmin/Admin only)
+router.patch(
+  "/:userId/role",
+  authorize("SuperAdmin", "Admin"),
+  UserController.updateUserRole
+);
+
+// Update user status (SuperAdmin/Admin only)
+router.patch(
+  "/:userId/status",
+  authorize("SuperAdmin", "Admin"),
+  UserController.updateUserStatus
+);
+
+// Update user (SuperAdmin/Admin only)
 router.patch(
   "/:userId",
-  authorize("Admin"),
+  authorize("SuperAdmin", "Admin"),
   validateRequest(updateUserSchema),
   UserController.updateUser
 );
 
-// Delete user (Admin only)
-router.delete("/:userId", authorize("Admin"), UserController.deleteUser);
+// Delete user (SuperAdmin/Admin only)
+router.delete(
+  "/:userId",
+  authorize("SuperAdmin", "Admin"),
+  UserController.deleteUser
+);
 
-// Toggle user status (Admin only)
+// Toggle user status (SuperAdmin/Admin only)
 router.patch(
   "/:userId/toggle-status",
-  authorize("Admin"),
+  authorize("SuperAdmin", "Admin"),
   UserController.toggleUserStatus
 );
 

@@ -217,6 +217,45 @@ class OrganizationController {
       data: organizations,
     });
   });
+
+  /**
+   * Update organization status (SuperAdmin/Admin only)
+   * PATCH /api/v1/organizations/:id/status
+   */
+  updateOrganizationStatus = catchAsync(
+    async (req: Request, res: Response) => {
+      const { status } = req.body;
+
+      const organization = await organizationService.updateOrganizationStatus(
+        req.params.id,
+        status
+      );
+
+      sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Organization status updated successfully",
+        data: organization,
+      });
+    }
+  );
+
+  /**
+   * Delete organization permanently (SuperAdmin only)
+   * DELETE /api/v1/organizations/:id/permanent
+   */
+  deleteOrganizationPermanently = catchAsync(
+    async (req: Request, res: Response) => {
+      await organizationService.deleteOrganizationPermanently(req.params.id);
+
+      sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Organization permanently deleted",
+        data: null,
+      });
+    }
+  );
 }
 
 export default new OrganizationController();

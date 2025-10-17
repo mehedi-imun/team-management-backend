@@ -403,6 +403,47 @@ class OrganizationService {
 
     return Organization.find(query).sort({ createdAt: -1 });
   }
+
+  /**
+   * Update organization status (SuperAdmin/Admin only)
+   */
+  async updateOrganizationStatus(
+    organizationId: string,
+    status: "active" | "pending_setup" | "suspended"
+  ): Promise<IOrganization> {
+    const organization = await Organization.findById(organizationId);
+
+    if (!organization) {
+      throw new AppError(404, "Organization not found");
+    }
+
+    organization.status = status;
+    await organization.save();
+
+    // Invalidate cache
+    await cacheService.delete(`organization:${organizationId}`);
+
+    return organization;
+  }
+
+  /**
+   * Delete organization permanently (SuperAdmin only)
+   */
+  async deleteOrganizationPermanently(
+    organizationId: string
+  ): Promise<void> {
+    const organization = await Organization.findById(organizationId);
+
+    if (!organization) {
+      throw new AppError(404, "Organization not found");
+    }
+
+    // Delete permanently
+    await Organization.findByIdAndDelete(organizationId);
+
+    // Invalidate cache
+    await cacheService.delete(`organization:${organizationId}`);
+  }
 }
 
 export default new OrganizationService();

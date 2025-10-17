@@ -155,6 +155,50 @@ const toggleUserStatus = async (
   return user;
 };
 
+// Update user role (SuperAdmin/Admin only)
+const updateUserRole = async (
+  id: string,
+  role: "SuperAdmin" | "Admin" | "Member"
+): Promise<IUserWithoutPassword | null> => {
+  if (!Types.ObjectId.isValid(id)) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid user ID");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    id,
+    { role },
+    { new: true, runValidators: true }
+  );
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  return user;
+};
+
+// Update user status (SuperAdmin/Admin only)
+const updateUserStatus = async (
+  id: string,
+  status: "active" | "inactive" | "suspended"
+): Promise<IUserWithoutPassword | null> => {
+  if (!Types.ObjectId.isValid(id)) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid user ID");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    id,
+    { status },
+    { new: true, runValidators: true }
+  );
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  return user;
+};
+
 export const UserService = {
   getAllUsers,
   getUserById,
@@ -164,4 +208,6 @@ export const UserService = {
   deleteUser,
   changePassword,
   toggleUserStatus,
+  updateUserRole,
+  updateUserStatus,
 };

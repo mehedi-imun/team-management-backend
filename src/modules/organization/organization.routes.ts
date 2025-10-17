@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate";
+import { authorize } from "../../middleware/authorize";
 import { validateRequest } from "../../middleware/validateRequest";
 import organizationController from "./organization.controller";
 import {
@@ -33,6 +34,28 @@ router.get(
 router.post("/generate-slug", organizationController.generateSlug);
 
 /**
+ * @route   GET /api/v1/organizations/all
+ * @desc    Get ALL organizations (SuperAdmin/Admin only)
+ * @access  Private (SuperAdmin/Admin)
+ */
+router.get(
+  "/all",
+  authorize("SuperAdmin", "Admin"),
+  organizationController.getAllOrganizations
+);
+
+/**
+ * @route   POST /api/v1/organizations/create-with-setup
+ * @desc    Create organization with setup token (Platform admin only)
+ * @access  Private (SuperAdmin/Admin)
+ */
+router.post(
+  "/create-with-setup",
+  authorize("SuperAdmin", "Admin"),
+  organizationController.createOrganizationWithSetup
+);
+
+/**
  * @route   GET /api/v1/organizations
  * @desc    Get all organizations for logged-in user
  * @access  Private
@@ -58,6 +81,17 @@ router.post(
 router.get("/:id", organizationController.getOrganizationById);
 
 /**
+ * @route   PATCH /api/v1/organizations/:id/status
+ * @desc    Update organization status (SuperAdmin/Admin only)
+ * @access  Private (SuperAdmin/Admin)
+ */
+router.patch(
+  "/:id/status",
+  authorize("SuperAdmin", "Admin"),
+  organizationController.updateOrganizationStatus
+);
+
+/**
  * @route   PATCH /api/v1/organizations/:id
  * @desc    Update organization
  * @access  Private (Owner only)
@@ -66,6 +100,17 @@ router.patch(
   "/:id",
   validateRequest(updateOrganizationSchema),
   organizationController.updateOrganization
+);
+
+/**
+ * @route   DELETE /api/v1/organizations/:id/permanent
+ * @desc    Permanently delete organization (SuperAdmin only)
+ * @access  Private (SuperAdmin)
+ */
+router.delete(
+  "/:id/permanent",
+  authorize("SuperAdmin"),
+  organizationController.deleteOrganizationPermanently
 );
 
 /**

@@ -125,6 +125,48 @@ const changePassword = async (req: any, res: Response, next: NextFunction) => {
   }
 };
 
+// Update user role (SuperAdmin/Admin only)
+const updateUserRole = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { role } = req.body;
+    const user = await UserService.updateUserRole(req.params.userId, role);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "User role updated successfully",
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Update user status (SuperAdmin/Admin only)
+const updateUserStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { status } = req.body;
+    const user = await UserService.updateUserStatus(req.params.userId, status);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "User status updated successfully",
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const UserController = {
   getAllUsers,
   getUserById,
@@ -133,4 +175,6 @@ export const UserController = {
   deleteUser,
   toggleUserStatus,
   changePassword,
+  updateUserRole,
+  updateUserStatus,
 };

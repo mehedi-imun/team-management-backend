@@ -16,7 +16,9 @@ if (envConfig.STRIPE_SECRET_KEY) {
     console.warn("⚠️  Stripe initialization failed:", error);
   }
 } else {
-  console.warn("⚠️  Stripe API key not found - Billing features will be disabled");
+  console.warn(
+    "⚠️  Stripe API key not found - Billing features will be disabled"
+  );
 }
 
 // Price mapping for each plan and billing cycle
@@ -38,7 +40,10 @@ const PRICE_IDS = {
 class StripeService {
   private checkStripeEnabled() {
     if (!stripe) {
-      throw new AppError(503, "Billing service is not available. Please configure Stripe API keys.");
+      throw new AppError(
+        503,
+        "Billing service is not available. Please configure Stripe API keys."
+      );
     }
   }
 
@@ -53,7 +58,7 @@ class StripeService {
     cancelUrl: string;
   }) {
     this.checkStripeEnabled();
-    
+
     const { organizationId, plan, billingCycle, successUrl, cancelUrl } = data;
 
     // Get organization
@@ -122,7 +127,7 @@ class StripeService {
    */
   async verifyCheckoutSession(sessionId: string) {
     this.checkStripeEnabled();
-    
+
     const session = await stripe!.checkout.sessions.retrieve(sessionId, {
       expand: ["subscription"],
     });
@@ -163,7 +168,7 @@ class StripeService {
    */
   async createPortalSession(organizationId: string, returnUrl: string) {
     this.checkStripeEnabled();
-    
+
     const organization = await Organization.findById(organizationId);
     if (!organization) {
       throw new AppError(404, "Organization not found");
@@ -188,7 +193,7 @@ class StripeService {
    */
   async cancelSubscription(organizationId: string) {
     this.checkStripeEnabled();
-    
+
     const organization = await Organization.findById(organizationId);
     if (!organization) {
       throw new AppError(404, "Organization not found");
@@ -214,7 +219,7 @@ class StripeService {
    */
   async reactivateSubscription(organizationId: string) {
     this.checkStripeEnabled();
-    
+
     const organization = await Organization.findById(organizationId);
     if (!organization) {
       throw new AppError(404, "Organization not found");
@@ -290,7 +295,7 @@ class StripeService {
 
   private async handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     if (!stripe) return;
-    
+
     const organizationId = subscription.metadata?.organizationId;
     if (!organizationId) return;
 
@@ -309,7 +314,7 @@ class StripeService {
 
   private async handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     if (!stripe) return;
-    
+
     const organizationId = subscription.metadata?.organizationId;
     if (!organizationId) return;
 
@@ -330,7 +335,7 @@ class StripeService {
 
   private async handlePaymentSucceeded(invoice: Stripe.Invoice) {
     if (!stripe) return;
-    
+
     const subscriptionId = (invoice as any).subscription as string;
     if (!subscriptionId) return;
 
@@ -349,7 +354,7 @@ class StripeService {
 
   private async handlePaymentFailed(invoice: Stripe.Invoice) {
     if (!stripe) return;
-    
+
     const subscriptionId = (invoice as any).subscription as string;
     if (!subscriptionId) return;
 
@@ -371,7 +376,7 @@ class StripeService {
    */
   async getSubscriptionDetails(organizationId: string) {
     this.checkStripeEnabled();
-    
+
     const organization = await Organization.findById(organizationId);
     if (!organization) {
       throw new AppError(404, "Organization not found");

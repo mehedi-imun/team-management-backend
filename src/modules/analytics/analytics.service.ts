@@ -1,6 +1,7 @@
 import { cacheService } from "../../services/cache.service";
 import { Team } from "../team/team.model";
 import { User } from "../user/user.model";
+import { Organization } from "../organization/organization.model";
 import {
   IAnalyticsSummary,
   IApprovalRate,
@@ -138,8 +139,162 @@ const getApprovalRates = async (): Promise<IApprovalRate> => {
   return rates;
 };
 
+// Platform Analytics for SuperAdmin/Admin
+const getPlatformAnalytics = async () => {
+  // Try cache
+  const cached = await cacheService.get("analytics:platform");
+  if (cached) {
+    console.log("✅ Cache hit for platform analytics");
+    return cached;
+  }
+
+  // Organization stats
+  const totalOrganizations = await Organization.countDocuments();
+  const trialOrganizations = await Organization.countDocuments({
+    status: "trial",
+  });
+  const activeSubscriptions = await Organization.countDocuments({
+    status: "active",
+  });
+  const suspendedOrganizations = await Organization.countDocuments({
+    status: "suspended",
+  });
+  const cancelledOrganizations = await Organization.countDocuments({
+    status: "cancelled",
+  });
+
+  // Calculate revenue (mock data for now - will be real when Stripe webhooks implemented)
+  const monthlyRevenue = 0; // TODO: Calculate from Stripe
+  const totalRevenue = 0; // TODO: Calculate from Stripe
+
+  // User stats
+  const totalUsers = await User.countDocuments();
+  const superAdmins = await User.countDocuments({ role: "SuperAdmin" });
+  const admins = await User.countDocuments({ role: "Admin" });
+  const members = await User.countDocuments({ role: "Member" });
+  const organizationOwners = await User.countDocuments({
+    isOrganizationOwner: true,
+  });
+  const organizationAdmins = await User.countDocuments({
+    isOrganizationAdmin: true,
+  });
+  const activeUsers = await User.countDocuments({ status: "active" });
+  const inactiveUsers = await User.countDocuments({ status: "inactive" });
+
+  const analytics = {
+    organizations: {
+      totalOrganizations,
+      activeSubscriptions,
+      trialOrganizations,
+      suspendedOrganizations,
+      cancelledOrganizations,
+      monthlyRevenue,
+      totalRevenue,
+    },
+    users: {
+      totalUsers,
+      superAdmins,
+      admins,
+      organizationOwners,
+      organizationAdmins,
+      members,
+      activeUsers,
+      inactiveUsers,
+    },
+    revenue: {
+      monthly: monthlyRevenue,
+      yearly: totalRevenue,
+      growth: 0, // TODO: Calculate growth
+    },
+  };
+
+  // Cache for 5 minutes
+  await cacheService.set("analytics:platform", analytics, 300);
+
+  return analytics;
+};
+
+const getOrganizationStats = async () => {
+  // Try cache
+  const cached = await cacheService.get("analytics:organizations");
+  if (cached) {
+    console.log("✅ Cache hit for organization stats");
+    return cached;
+  }
+
+  const totalOrganizations = await Organization.countDocuments();
+  const trialOrganizations = await Organization.countDocuments({
+    status: "trial",
+  });
+  const activeSubscriptions = await Organization.countDocuments({
+    status: "active",
+  });
+  const suspendedOrganizations = await Organization.countDocuments({
+    status: "suspended",
+  });
+  const cancelledOrganizations = await Organization.countDocuments({
+    status: "cancelled",
+  });
+
+  const stats = {
+    totalOrganizations,
+    activeSubscriptions,
+    trialOrganizations,
+    suspendedOrganizations,
+    cancelledOrganizations,
+    monthlyRevenue: 0,
+    totalRevenue: 0,
+  };
+
+  // Cache for 5 minutes
+  await cacheService.set("analytics:organizations", stats, 300);
+
+  return stats;
+};
+
+const getUserStats = async () => {
+  // Try cache
+  const cached = await cacheService.get("analytics:users");
+  if (cached) {
+    console.log("✅ Cache hit for user stats");
+    return cached;
+  }
+
+  const totalUsers = await User.countDocuments();
+  const superAdmins = await User.countDocuments({ role: "SuperAdmin" });
+  const admins = await User.countDocuments({ role: "Admin" });
+  const members = await User.countDocuments({ role: "Member" });
+  const organizationOwners = await User.countDocuments({
+    isOrganizationOwner: true,
+  });
+  const organizationAdmins = await User.countDocuments({
+    isOrganizationAdmin: true,
+  });
+  const activeUsers = await User.countDocuments({ status: "active" });
+  const inactiveUsers = await User.countDocuments({ status: "inactive" });
+
+  const stats = {
+    totalUsers,
+    superAdmins,
+    admins,
+    organizationOwners,
+    organizationAdmins,
+    members,
+    activeUsers,
+    inactiveUsers,
+  };
+
+  // Cache for 5 minutes
+  await cacheService.set("analytics:users", stats, 300);
+
+  return stats;
+};
+
 export const AnalyticsService = {
   getAnalyticsSummary,
   getTeamDistribution,
   getApprovalRates,
+  getPlatformAnalytics,
+  getOrganizationStats,
+  getUserStats,
 };

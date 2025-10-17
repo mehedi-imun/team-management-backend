@@ -56,8 +56,68 @@ const getApprovalRates = async (
   }
 };
 
+const getPlatformAnalytics = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const result = await AnalyticsService.getPlatformAnalytics();
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Platform analytics retrieved successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getOrganizationStats = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const result = await AnalyticsService.getOrganizationStats();
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Organization stats retrieved successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getUserStats = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const result = await AnalyticsService.getUserStats();
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "User stats retrieved successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const AnalyticsController = {
   getSummary,
   getTeamDistribution,
   getApprovalRates,
+  getPlatformAnalytics,
+  getOrganizationStats,
+  getUserStats,
 };

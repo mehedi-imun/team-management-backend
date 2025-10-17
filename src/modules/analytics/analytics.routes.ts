@@ -5,7 +5,29 @@ import { AnalyticsController } from "./analytics.controller";
 
 const router = Router();
 
-// All analytics routes require authentication and Admin/Director role
+// Platform-level analytics (SuperAdmin/Admin only)
+router.get(
+  "/platform",
+  authenticate,
+  authorize("SuperAdmin", "Admin"),
+  AnalyticsController.getPlatformAnalytics
+);
+
+router.get(
+  "/organizations",
+  authenticate,
+  authorize("SuperAdmin", "Admin"),
+  AnalyticsController.getOrganizationStats
+);
+
+router.get(
+  "/users",
+  authenticate,
+  authorize("SuperAdmin", "Admin"),
+  AnalyticsController.getUserStats
+);
+
+// Organization-level analytics (Admin/Director)
 router.get(
   "/summary",
   authenticate,
