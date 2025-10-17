@@ -10,7 +10,12 @@ const createTeam = async (req: Request, res: Response, next: NextFunction) => {
     const organizationId = req.organizationId as string;
     const userId = req.user?._id;
     const isOrgOwner = req.user?.isOrganizationOwner || false;
-    const newTeam = await TeamService.createTeam(req.body, organizationId, userId, isOrgOwner);
+    const newTeam = await TeamService.createTeam(
+      req.body,
+      organizationId,
+      userId,
+      isOrgOwner
+    );
     sendResponse(res, {
       statusCode: httpStatus.CREATED,
       success: true,

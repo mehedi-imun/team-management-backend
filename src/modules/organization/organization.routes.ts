@@ -87,6 +87,13 @@ router.post(
 );
 
 /**
+ * @route   GET /api/v1/organizations/stats
+ * @desc    Get organization statistics for current user
+ * @access  Private
+ */
+router.get("/stats", organizationController.getOrganizationStats);
+
+/**
  * @route   GET /api/v1/organizations/:id
  * @desc    Get organization by ID
  * @access  Private

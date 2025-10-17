@@ -120,7 +120,7 @@ const getMyOrganizationAnalytics = async (
 ) => {
   try {
     const user = req.user as any;
-    
+
     if (!user?.organizationId) {
       return sendResponse(res, {
         statusCode: httpStatus.BAD_REQUEST,

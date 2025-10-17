@@ -368,6 +368,22 @@ class OrganizationController {
       data: null,
     });
   });
+
+  /**
+   * Get organization stats for current user
+   * GET /api/v1/organizations/stats
+   */
+  getOrganizationStats = catchAsync(async (req: Request, res: Response) => {
+    const userId = req.user?._id as string;
+    const stats = await organizationService.getOrganizationStats(userId);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Organization stats retrieved successfully",
+      data: stats,
+    });
+  });
 }
 
 export default new OrganizationController();

@@ -640,14 +640,14 @@ class OrganizationService {
         existingUser.organizationId &&
         existingUser.organizationId !== organizationId
       ) {
-        throw new AppError(
-          409,
-          "User already belongs to another organization"
-        );
+        throw new AppError(409, "User already belongs to another organization");
       }
       // If user exists and already in this organization
       if (existingUser.organizationId === organizationId) {
-        throw new AppError(409, "User is already a member of this organization");
+        throw new AppError(
+          409,
+          "User is already a member of this organization"
+        );
       }
     }
 
@@ -656,8 +656,12 @@ class OrganizationService {
     if (existingUser) {
       // Update existing user
       existingUser.organizationId = organizationId;
-      existingUser.role = (memberData.role || "Member") as "SuperAdmin" | "Admin" | "Member";
-      existingUser.isOrganizationAdmin = memberData.isOrganizationAdmin || false;
+      existingUser.role = (memberData.role || "Member") as
+        | "SuperAdmin"
+        | "Admin"
+        | "Member";
+      existingUser.isOrganizationAdmin =
+        memberData.isOrganizationAdmin || false;
       await existingUser.save();
       user = existingUser;
     } else {
@@ -667,7 +671,10 @@ class OrganizationService {
         email: memberData.email,
         name: memberData.name,
         password,
-        role: (memberData.role || "Member") as "SuperAdmin" | "Admin" | "Member",
+        role: (memberData.role || "Member") as
+          | "SuperAdmin"
+          | "Admin"
+          | "Member",
         organizationId,
         isOrganizationAdmin: memberData.isOrganizationAdmin || false,
       });
@@ -813,6 +820,66 @@ class OrganizationService {
     // Invalidate cache
     await cacheService.delete(`organization:${organizationId}`);
     await cacheService.delete(`organizations:user:${currentUserId}`);
+  }
+
+  /**
+   * Get organization statistics for current user
+   */
+  async getOrganizationStats(userId: string): Promise<any> {
+    const user = await User.findById(userId);
+    if (!user || !user.organizationId) {
+      throw new AppError(404, "User not in any organization");
+    }
+
+    const organizationId = user.organizationId;
+
+    // Get total members count
+    const totalMembers = await User.countDocuments({ organizationId });
+
+    // Get active members count
+    const activeMembers = await User.countDocuments({
+      organizationId,
+      isActive: true,
+    });
+
+    // Get pending/inactive members
+    const pendingMembers = await User.countDocuments({
+      organizationId,
+      isActive: false,
+    });
+
+    // Get total teams count (if team model exists)
+    let totalTeams = 0;
+    try {
+      const Team = require("../team/team.model").default;
+      totalTeams = await Team.countDocuments({ organizationId });
+    } catch (error) {
+      // Team model might not exist, ignore
+    }
+
+    // Get organization to check trial period
+    const organization = await Organization.findById(organizationId);
+    let daysLeftInTrial: number | undefined;
+
+    if (
+      organization &&
+      organization.subscriptionStatus === "trialing" &&
+      organization.currentPeriodEnd
+    ) {
+      const now = new Date();
+      const trialEnd = new Date(organization.currentPeriodEnd);
+      const diffTime = trialEnd.getTime() - now.getTime();
+      daysLeftInTrial = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    return {
+      totalMembers,
+      activeMembers,
+      pendingMembers,
+      inactiveMembers: totalMembers - activeMembers,
+      totalTeams,
+      daysLeftInTrial,
+    };
   }
 }
 

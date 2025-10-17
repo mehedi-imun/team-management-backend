@@ -8,7 +8,12 @@ import { IMember, ITeam } from "./team.interface";
 import { Team } from "./team.model";
 
 // Create a new team
-const createTeam = async (data: any, organizationId: string, userId?: string, isOrgOwner?: boolean) => {
+const createTeam = async (
+  data: any,
+  organizationId: string,
+  userId?: string,
+  isOrgOwner?: boolean
+) => {
   if (!data.name || !data.description) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
