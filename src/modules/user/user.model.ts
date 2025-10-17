@@ -6,7 +6,7 @@ const userSchema = new Schema<IUser>(
   {
     organizationId: {
       type: String,
-      required: [true, "Organization ID is required"],
+      required: false, // Optional for Platform Admins (SuperAdmin/Admin)
       index: true,
     },
     email: {
@@ -31,14 +31,30 @@ const userSchema = new Schema<IUser>(
     role: {
       type: String,
       enum: {
-        values: ["Admin", "Manager", "Director"],
+        values: ["SuperAdmin", "Admin", "Member"],
         message: "{VALUE} is not a valid role",
       },
       required: [true, "Role is required"],
+      default: "Member",
+    },
+    isOrganizationOwner: {
+      type: Boolean,
+      default: false,
+    },
+    isOrganizationAdmin: {
+      type: Boolean,
+      default: false,
+    },
+    managedTeamIds: {
+      type: [String],
+      default: [],
     },
     isActive: {
       type: Boolean,
       default: true,
+    },
+    lastLoginAt: {
+      type: Date,
     },
     passwordResetToken: {
       type: String,

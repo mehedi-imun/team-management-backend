@@ -170,6 +170,54 @@ class OrganizationController {
       data: stats,
     });
   });
+
+  /**
+   * Create organization with setup token (platform admin only)
+   * POST /api/v1/organizations/create-with-setup
+   */
+  createOrganizationWithSetup = catchAsync(
+    async (req: Request, res: Response) => {
+      const { name, slug, ownerEmail, ownerName, plan } = req.body;
+
+      const organization =
+        await organizationService.createOrganizationWithSetup({
+          name,
+          slug,
+          ownerEmail,
+          ownerName,
+          plan,
+        });
+
+      sendResponse(res, {
+        statusCode: 201,
+        success: true,
+        message:
+          "Organization created. Setup email sent to designated owner.",
+        data: organization,
+      });
+    }
+  );
+
+  /**
+   * Get all organizations (platform admin only)
+   * GET /api/v1/organizations/all
+   */
+  getAllOrganizations = catchAsync(async (req: Request, res: Response) => {
+    const { status, plan, search } = req.query;
+
+    const organizations = await organizationService.getAllOrganizations({
+      status: status as string,
+      plan: plan as string,
+      search: search as string,
+    });
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "All organizations retrieved successfully",
+      data: organizations,
+    });
+  });
 }
 
 export default new OrganizationController();

@@ -90,6 +90,90 @@ class EmailService {
       return false;
     }
   }
+
+  async sendInvitationEmail(
+    to: string,
+    token: string,
+    inviterName: string,
+    teamName: string,
+    organizationId: string
+  ) {
+    const inviteUrl = `${envConfig.FRONTEND_URL}/accept-invite?token=${token}`;
+    const teamText = teamName ? ` to join the team "${teamName}"` : "";
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <body style="font-family: Arial, sans-serif; padding: 20px;">
+        <h1 style="color: #4F46E5;">You've Been Invited!</h1>
+        <p>Hello,</p>
+        <p>${inviterName} has invited you${teamText} in their organization.</p>
+        <p>Click the button below to accept the invitation and create your account:</p>
+        <a href="${inviteUrl}" style="display: inline-block; padding: 12px 30px; background: #4F46E5; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">Accept Invitation</a>
+        <p><strong>This invitation will expire in 7 days.</strong></p>
+        <p>If you weren't expecting this invitation, you can safely ignore this email.</p>
+      </body>
+      </html>
+    `;
+
+    try {
+      const transporter = await this.getTransporter();
+      if (!transporter) return false;
+
+      await transporter.sendMail({
+        from: `"Team Management" <${envConfig.EMAIL_FROM}>`,
+        to,
+        subject: `Invitation to join Team Management`,
+        html,
+      });
+      console.log(`✅ Invitation email sent to ${to}`);
+      return true;
+    } catch (error) {
+      console.error("❌ Email error:", error);
+      return false;
+    }
+  }
+
+  async sendOrganizationSetupEmail(
+    to: string,
+    token: string,
+    organizationName: string,
+    ownerName: string
+  ) {
+    const setupUrl = `${envConfig.FRONTEND_URL}/setup-organization?token=${token}`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <body style="font-family: Arial, sans-serif; padding: 20px;">
+        <h1 style="color: #4F46E5;">Set Up Your Organization</h1>
+        <p>Hello ${ownerName},</p>
+        <p>An administrator has created the organization "${organizationName}" and designated you as the owner.</p>
+        <p>Click the button below to set up your account and access your organization:</p>
+        <a href="${setupUrl}" style="display: inline-block; padding: 12px 30px; background: #4F46E5; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">Set Up Organization</a>
+        <p><strong>This link will expire in 48 hours.</strong></p>
+        <p>If you have any questions, please contact support.</p>
+      </body>
+      </html>
+    `;
+
+    try {
+      const transporter = await this.getTransporter();
+      if (!transporter) return false;
+
+      await transporter.sendMail({
+        from: `"Team Management" <${envConfig.EMAIL_FROM}>`,
+        to,
+        subject: `Set Up Your Organization - ${organizationName}`,
+        html,
+      });
+      console.log(`✅ Organization setup email sent to ${to}`);
+      return true;
+    } catch (error) {
+      console.error("❌ Email error:", error);
+      return false;
+    }
+  }
 }
 
 export const emailService = new EmailService();

@@ -28,6 +28,16 @@ interface EnvConfig {
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: number;
   RATE_LIMIT_MAX_REQUESTS: number;
+
+  // Stripe
+  STRIPE_SECRET_KEY: string;
+  STRIPE_WEBHOOK_SECRET: string;
+  STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID: string;
+  STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID: string;
+  STRIPE_BUSINESS_MONTHLY_PRICE_ID: string;
+  STRIPE_BUSINESS_ANNUAL_PRICE_ID: string;
+  STRIPE_ENTERPRISE_MONTHLY_PRICE_ID: string;
+  STRIPE_ENTERPRISE_ANNUAL_PRICE_ID: string;
 }
 
 // Function to load environment variables and validate their existence
@@ -78,6 +88,22 @@ const loadEnvVariables = (): EnvConfig => {
     RATE_LIMIT_MAX_REQUESTS: parseInt(
       process.env.RATE_LIMIT_MAX_REQUESTS || "100"
     ),
+
+    // Stripe
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || "",
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || "",
+    STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID:
+      process.env.STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID || "",
+    STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID:
+      process.env.STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID || "",
+    STRIPE_BUSINESS_MONTHLY_PRICE_ID:
+      process.env.STRIPE_BUSINESS_MONTHLY_PRICE_ID || "",
+    STRIPE_BUSINESS_ANNUAL_PRICE_ID:
+      process.env.STRIPE_BUSINESS_ANNUAL_PRICE_ID || "",
+    STRIPE_ENTERPRISE_MONTHLY_PRICE_ID:
+      process.env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID || "",
+    STRIPE_ENTERPRISE_ANNUAL_PRICE_ID:
+      process.env.STRIPE_ENTERPRISE_ANNUAL_PRICE_ID || "",
   };
 };
 

@@ -169,7 +169,36 @@ const organizationSchema = new Schema<
     // Owner
     ownerId: {
       type: String,
-      required: [true, "Organization owner is required"],
+      required: false, // Optional when status is "pending_setup"
+      index: true,
+    },
+    ownerEmail: {
+      type: String,
+      trim: true,
+      lowercase: true,
+    },
+    ownerName: {
+      type: String,
+      trim: true,
+    },
+
+    // Setup tokens for admin-created organizations
+    setupToken: {
+      type: String,
+      trim: true,
+      index: true,
+    },
+    setupTokenExpires: {
+      type: Date,
+    },
+    status: {
+      type: String,
+      enum: {
+        values: ["pending_setup", "active", "suspended"],
+        message: "{VALUE} is not a valid organization status",
+      },
+      default: "active",
+      required: true,
       index: true,
     },
 
@@ -383,7 +412,7 @@ organizationSchema.methods.decrementUsage = async function (
   await this.save();
 };
 
-export const Organization = model<IOrganization>(
+export const Organization = model<IOrganization, IOrganizationModel>(
   "Organization",
   organizationSchema
 );

@@ -1,9 +1,18 @@
 import { Schema, model } from "mongoose";
 import { IMember, ITeam } from "./team.interface";
 
-const memberSchema = new Schema<IMember>({
-  name: { type: String, required: true },
-});
+const memberSchema = new Schema<IMember>(
+  {
+    userId: { type: String, required: false, index: true },
+    email: { type: String, required: true, index: true },
+    name: { type: String, required: false },
+    role: { type: String, required: false, default: "Member" },
+    joinedAt: { type: Date, required: false },
+    invitedAt: { type: Date, required: false },
+    isActive: { type: Boolean, default: true },
+  },
+  { _id: true }
+);
 
 const statusEnum = ["0", "1", "-1"] as const;
 
@@ -16,6 +25,8 @@ const teamSchema = new Schema<ITeam>(
     },
     name: { type: String, required: true },
     description: { type: String, required: true },
+    managerId: { type: String, required: false, index: true },
+    isActive: { type: Boolean, default: true, index: true },
     managerApproved: { type: String, enum: statusEnum, default: "0" },
     directorApproved: { type: String, enum: statusEnum, default: "0" },
     order: { type: Number, default: 0 },

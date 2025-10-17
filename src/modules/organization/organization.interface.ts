@@ -47,7 +47,14 @@ export interface IOrganization {
   };
 
   // Owner
-  ownerId: string; // User who created the organization
+  ownerId?: string; // User who created the organization (optional if pending setup)
+  ownerEmail?: string; // Email of designated owner (for admin-created orgs)
+  ownerName?: string; // Name of designated owner (for admin-created orgs)
+
+  // Setup tokens (for admin-created organizations)
+  setupToken?: string;
+  setupTokenExpires?: Date;
+  status: "pending_setup" | "active" | "suspended"; // Organization status
 
   // Metadata
   isActive: boolean;

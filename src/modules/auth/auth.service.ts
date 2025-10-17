@@ -145,10 +145,166 @@ const logout = async (): Promise<void> => {
   return;
 };
 
+// Self-service registration - create organization + owner in one transaction
+const register = async (data: {
+  name: string;
+  email: string;
+  password: string;
+  organizationName: string;
+  organizationSlug: string;
+}) => {
+  const { Organization } = await import("../organization/organization.model");
+
+  // Check if user already exists
+  const existingUser = await User.findOne({ email: data.email });
+  if (existingUser) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Email already in use");
+  }
+
+  // Check if organization slug is available
+  const slugAvailable = await Organization.checkSlugAvailability(
+    data.organizationSlug
+  );
+  if (!slugAvailable) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Organization slug already taken"
+    );
+  }
+
+  // Create organization first (with pending status until owner is created)
+  const organization = await Organization.create({
+    name: data.organizationName,
+    slug: data.organizationSlug,
+    plan: "free",
+    subscriptionStatus: "trialing",
+    status: "active",
+    usage: {
+      users: 1, // Owner will be the first user
+      teams: 0,
+      storage: "0MB",
+    },
+  });
+
+  // Create owner user account
+  const owner = await User.create({
+    name: data.name,
+    email: data.email,
+    password: data.password,
+    organizationId: organization._id!.toString(),
+    role: "Member", // Platform role is Member
+    isOrganizationOwner: true, // But they own this organization
+    isOrganizationAdmin: false,
+    isActive: true,
+  });
+
+  // Update organization with ownerId
+  organization.ownerId = owner._id!.toString();
+  await organization.save();
+
+  // Generate tokens for auto-login
+  const tokenPayload = {
+    userId: owner._id!.toString(),
+    email: owner.email,
+    role: owner.role,
+  };
+
+  const accessToken = generateAccessToken(tokenPayload);
+  const refreshToken = generateRefreshToken(tokenPayload);
+
+  // Send welcome email
+  await emailService.sendWelcomeEmail(owner.email, owner.name, "Owner");
+
+  return {
+    user: owner,
+    organization,
+    accessToken,
+    refreshToken,
+  };
+};
+
+// Setup organization (for admin-created organizations)
+const setupOrganization = async (data: {
+  token: string;
+  name: string;
+  password: string;
+}) => {
+  const { Organization } = await import("../organization/organization.model");
+  const crypto = await import("crypto");
+
+  // Hash the token for comparison
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(data.token)
+    .digest("hex");
+
+  // Find organization with valid setup token
+  const organization = await Organization.findOne({
+    setupToken: hashedToken,
+    setupTokenExpires: { $gt: new Date() },
+    status: "pending_setup",
+  });
+
+  if (!organization) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Invalid or expired setup token"
+    );
+  }
+
+  // Check if user already exists
+  const existingUser = await User.findOne({ email: organization.ownerEmail });
+  if (existingUser) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "User already exists with this email"
+    );
+  }
+
+  // Create owner account
+  const owner = await User.create({
+    name: data.name,
+    email: organization.ownerEmail!,
+    password: data.password,
+    organizationId: organization._id!.toString(),
+    role: "Admin", // Admin-created org owners get Admin role
+    isOrganizationOwner: true,
+    isOrganizationAdmin: true,
+    isActive: true,
+  });
+
+  // Update organization
+  organization.ownerId = owner._id!.toString();
+  organization.status = "active";
+  organization.setupToken = undefined;
+  organization.setupTokenExpires = undefined;
+  organization.usage.users = 1;
+  await organization.save();
+
+  // Generate tokens
+  const tokenPayload = {
+    userId: owner._id!.toString(),
+    email: owner.email,
+    role: owner.role,
+  };
+
+  const accessToken = generateAccessToken(tokenPayload);
+  const refreshToken = generateRefreshToken(tokenPayload);
+
+  return {
+    user: owner,
+    organization,
+    accessToken,
+    refreshToken,
+  };
+};
+
 export const AuthService = {
   login,
   refreshAccessToken,
   forgotPassword,
   resetPassword,
   logout,
+  register,
+  setupOrganization,
 };

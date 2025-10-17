@@ -101,7 +101,7 @@ class OrganizationService {
     }
 
     // Check if user is owner
-    if (organization.ownerId.toString() !== userId) {
+    if (organization.ownerId?.toString() !== userId) {
       throw new AppError(403, "Only organization owner can update settings");
     }
 
@@ -142,7 +142,7 @@ class OrganizationService {
     }
 
     // Check if user is owner
-    if (organization.ownerId.toString() !== userId) {
+    if (organization.ownerId?.toString() !== userId) {
       throw new AppError(
         403,
         "Only organization owner can delete organization"
@@ -211,7 +211,7 @@ class OrganizationService {
     }
 
     // Check if user is owner
-    if (organization.ownerId.toString() !== userId) {
+    if (organization.ownerId?.toString() !== userId) {
       throw new AppError(403, "Only organization owner can upgrade plan");
     }
 
@@ -317,6 +317,91 @@ class OrganizationService {
 
     // Invalidate cache
     await cacheService.delete(`organization:${organizationId}`);
+  }
+
+  /**
+   * Create organization with setup token (for platform admins)
+   * The designated owner will receive an email to complete setup
+   */
+  async createOrganizationWithSetup(data: {
+    name: string;
+    slug: string;
+    ownerEmail: string;
+    ownerName: string;
+    plan?: "free" | "professional" | "business" | "enterprise";
+  }): Promise<IOrganization> {
+    const crypto = await import("crypto");
+    const { emailService } = await import("../../services/email.service");
+
+    // Check if slug already exists
+    const existingSlug = await Organization.findOne({ slug: data.slug });
+    if (existingSlug) {
+      throw new AppError(409, "Organization slug already exists");
+    }
+
+    // Generate setup token
+    const setupToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(setupToken)
+      .digest("hex");
+
+    // Create organization in pending_setup status
+    const organization = await Organization.create({
+      name: data.name,
+      slug: data.slug,
+      ownerEmail: data.ownerEmail,
+      ownerName: data.ownerName,
+      plan: data.plan || "professional", // Admin-created orgs default to professional
+      subscriptionStatus: "active", // No trial for admin-created orgs
+      status: "pending_setup",
+      setupToken: hashedToken,
+      setupTokenExpires: new Date(Date.now() + 48 * 60 * 60 * 1000), // 48 hours
+      usage: {
+        users: 0, // Will increment when owner sets up
+        teams: 0,
+        storage: "0MB",
+      },
+    });
+
+    // Send setup email to designated owner
+    await emailService.sendOrganizationSetupEmail(
+      data.ownerEmail,
+      setupToken, // Send unhashed token
+      data.name,
+      data.ownerName
+    );
+
+    return organization;
+  }
+
+  /**
+   * Get all organizations (platform admin only)
+   */
+  async getAllOrganizations(filters?: {
+    status?: string;
+    plan?: string;
+    search?: string;
+  }): Promise<IOrganization[]> {
+    const query: any = {};
+
+    if (filters?.status) {
+      query.status = filters.status;
+    }
+
+    if (filters?.plan) {
+      query.plan = filters.plan;
+    }
+
+    if (filters?.search) {
+      query.$or = [
+        { name: { $regex: filters.search, $options: "i" } },
+        { slug: { $regex: filters.search, $options: "i" } },
+        { ownerEmail: { $regex: filters.search, $options: "i" } },
+      ];
+    }
+
+    return Organization.find(query).sort({ createdAt: -1 });
   }
 }
 

@@ -155,6 +155,93 @@ const getMe = async (req: any, res: Response, next: NextFunction) => {
   }
 };
 
+// Self-service registration
+const register = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { name, email, password, organizationName, organizationSlug } =
+      req.body;
+
+    const result = await AuthService.register({
+      name,
+      email,
+      password,
+      organizationName,
+      organizationSlug,
+    });
+
+    // Set HTTP-only cookies for auto-login
+    res.cookie("accessToken", result.accessToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    sendResponse(res, {
+      statusCode: httpStatus.CREATED,
+      success: true,
+      message: "Registration successful",
+      data: {
+        user: result.user,
+        organization: result.organization,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Setup organization (admin-created)
+const setupOrganization = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { token, name, password } = req.body;
+
+    const result = await AuthService.setupOrganization({
+      token,
+      name,
+      password,
+    });
+
+    // Set HTTP-only cookies for auto-login
+    res.cookie("accessToken", result.accessToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Organization setup successful",
+      data: {
+        user: result.user,
+        organization: result.organization,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const AuthController = {
   login,
   logout,
@@ -162,4 +249,6 @@ export const AuthController = {
   forgotPassword,
   resetPassword,
   getMe,
+  register,
+  setupOrganization,
 };
