@@ -146,6 +146,7 @@ const logout = async (): Promise<void> => {
 };
 
 // Self-service registration - create organization + owner in one transaction
+// Public users register and become Organization Owners with 14-day free trial
 const register = async (data: {
   name: string;
   email: string;
@@ -172,12 +173,13 @@ const register = async (data: {
     );
   }
 
-  // Create organization first (with pending status until owner is created)
+  // Create organization with 14-day free trial
   const organization = await Organization.create({
     name: data.organizationName,
     slug: data.organizationSlug,
     plan: "free",
     subscriptionStatus: "trialing",
+    trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
     status: "active",
     usage: {
       users: 1, // Owner will be the first user
@@ -187,19 +189,22 @@ const register = async (data: {
   });
 
   // Create owner user account
+  // Role: Member (platform level) + isOrganizationOwner: true (organization level)
   const owner = await User.create({
     name: data.name,
     email: data.email,
     password: data.password,
     organizationId: organization._id!.toString(),
-    role: "Member", // Platform role is Member
-    isOrganizationOwner: true, // But they own this organization
+    role: "Member", // Platform role: Member (not SuperAdmin/Admin)
+    isOrganizationOwner: true, // Organization permission: Owner of this org
     isOrganizationAdmin: false,
     isActive: true,
   });
 
   // Update organization with ownerId
   organization.ownerId = owner._id!.toString();
+  organization.ownerEmail = owner.email;
+  organization.ownerName = owner.name;
   await organization.save();
 
   // Generate tokens for auto-login
@@ -212,7 +217,7 @@ const register = async (data: {
   const accessToken = generateAccessToken(tokenPayload);
   const refreshToken = generateRefreshToken(tokenPayload);
 
-  // Send welcome email
+  // Send welcome email with trial info
   await emailService.sendWelcomeEmail(owner.email, owner.name, "Owner");
 
   return {

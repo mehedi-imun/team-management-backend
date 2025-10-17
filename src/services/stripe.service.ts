@@ -3,10 +3,21 @@ import envConfig from "../config/env";
 import AppError from "../errors/AppError";
 import { Organization } from "../modules/organization/organization.model";
 
-// Initialize Stripe
-const stripe = new Stripe(envConfig.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2025-09-30.clover",
-});
+// Initialize Stripe only if API key is provided
+let stripe: Stripe | null = null;
+
+if (envConfig.STRIPE_SECRET_KEY) {
+  try {
+    stripe = new Stripe(envConfig.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-09-30.clover",
+    });
+    console.log("✅ Stripe initialized");
+  } catch (error) {
+    console.warn("⚠️  Stripe initialization failed:", error);
+  }
+} else {
+  console.warn("⚠️  Stripe API key not found - Billing features will be disabled");
+}
 
 // Price mapping for each plan and billing cycle
 const PRICE_IDS = {
@@ -25,6 +36,12 @@ const PRICE_IDS = {
 };
 
 class StripeService {
+  private checkStripeEnabled() {
+    if (!stripe) {
+      throw new AppError(503, "Billing service is not available. Please configure Stripe API keys.");
+    }
+  }
+
   /**
    * Create Stripe Checkout Session for plan upgrade
    */
@@ -35,6 +52,8 @@ class StripeService {
     successUrl: string;
     cancelUrl: string;
   }) {
+    this.checkStripeEnabled();
+    
     const { organizationId, plan, billingCycle, successUrl, cancelUrl } = data;
 
     // Get organization
@@ -46,7 +65,7 @@ class StripeService {
     // Get or create Stripe customer
     let customerId = organization.stripeCustomerId;
     if (!customerId) {
-      const customer = await stripe.customers.create({
+      const customer = await stripe!.customers.create({
         email: organization.ownerEmail || "",
         name: organization.name,
         metadata: {
@@ -67,7 +86,7 @@ class StripeService {
     }
 
     // Create Checkout Session
-    const session = await stripe.checkout.sessions.create({
+    const session = await stripe!.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ["card"],
       line_items: [
@@ -102,7 +121,9 @@ class StripeService {
    * Verify Checkout Session and upgrade organization
    */
   async verifyCheckoutSession(sessionId: string) {
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+    this.checkStripeEnabled();
+    
+    const session = await stripe!.checkout.sessions.retrieve(sessionId, {
       expand: ["subscription"],
     });
 
@@ -141,6 +162,8 @@ class StripeService {
    * Create Stripe Customer Portal Session (for managing subscription)
    */
   async createPortalSession(organizationId: string, returnUrl: string) {
+    this.checkStripeEnabled();
+    
     const organization = await Organization.findById(organizationId);
     if (!organization) {
       throw new AppError(404, "Organization not found");
@@ -150,7 +173,7 @@ class StripeService {
       throw new AppError(400, "No Stripe customer found for this organization");
     }
 
-    const session = await stripe.billingPortal.sessions.create({
+    const session = await stripe!.billingPortal.sessions.create({
       customer: organization.stripeCustomerId,
       return_url: returnUrl,
     });
@@ -164,6 +187,8 @@ class StripeService {
    * Cancel subscription
    */
   async cancelSubscription(organizationId: string) {
+    this.checkStripeEnabled();
+    
     const organization = await Organization.findById(organizationId);
     if (!organization) {
       throw new AppError(404, "Organization not found");
@@ -174,7 +199,7 @@ class StripeService {
     }
 
     // Cancel at period end (don't immediately cancel)
-    await stripe.subscriptions.update(organization.stripeSubscriptionId, {
+    await stripe!.subscriptions.update(organization.stripeSubscriptionId, {
       cancel_at_period_end: true,
     });
 
@@ -188,6 +213,8 @@ class StripeService {
    * Reactivate cancelled subscription
    */
   async reactivateSubscription(organizationId: string) {
+    this.checkStripeEnabled();
+    
     const organization = await Organization.findById(organizationId);
     if (!organization) {
       throw new AppError(404, "Organization not found");
@@ -198,7 +225,7 @@ class StripeService {
     }
 
     // Remove cancel_at_period_end
-    const subscription = await stripe.subscriptions.update(
+    const subscription = await stripe!.subscriptions.update(
       organization.stripeSubscriptionId,
       {
         cancel_at_period_end: false,
@@ -262,6 +289,8 @@ class StripeService {
   }
 
   private async handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+    if (!stripe) return;
+    
     const organizationId = subscription.metadata?.organizationId;
     if (!organizationId) return;
 
@@ -279,6 +308,8 @@ class StripeService {
   }
 
   private async handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+    if (!stripe) return;
+    
     const organizationId = subscription.metadata?.organizationId;
     if (!organizationId) return;
 
@@ -298,10 +329,12 @@ class StripeService {
   }
 
   private async handlePaymentSucceeded(invoice: Stripe.Invoice) {
+    if (!stripe) return;
+    
     const subscriptionId = (invoice as any).subscription as string;
     if (!subscriptionId) return;
 
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = await stripe!.subscriptions.retrieve(subscriptionId);
     const organizationId = subscription.metadata?.organizationId;
     if (!organizationId) return;
 
@@ -315,10 +348,12 @@ class StripeService {
   }
 
   private async handlePaymentFailed(invoice: Stripe.Invoice) {
+    if (!stripe) return;
+    
     const subscriptionId = (invoice as any).subscription as string;
     if (!subscriptionId) return;
 
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = await stripe!.subscriptions.retrieve(subscriptionId);
     const organizationId = subscription.metadata?.organizationId;
     if (!organizationId) return;
 
@@ -335,6 +370,8 @@ class StripeService {
    * Get subscription details
    */
   async getSubscriptionDetails(organizationId: string) {
+    this.checkStripeEnabled();
+    
     const organization = await Organization.findById(organizationId);
     if (!organization) {
       throw new AppError(404, "Organization not found");
@@ -348,7 +385,7 @@ class StripeService {
       };
     }
 
-    const subscription = await stripe.subscriptions.retrieve(
+    const subscription = await stripe!.subscriptions.retrieve(
       organization.stripeSubscriptionId
     );
 

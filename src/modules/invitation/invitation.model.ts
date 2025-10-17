@@ -6,12 +6,10 @@ const invitationSchema = new Schema<IInvitation>(
     organizationId: {
       type: String,
       required: true,
-      index: true,
     },
     teamId: {
       type: String,
       required: false,
-      index: true,
     },
     invitedBy: {
       type: String,
@@ -22,7 +20,6 @@ const invitationSchema = new Schema<IInvitation>(
       required: true,
       lowercase: true,
       trim: true,
-      index: true,
     },
     role: {
       type: String,
@@ -32,18 +29,15 @@ const invitationSchema = new Schema<IInvitation>(
       type: String,
       required: true,
       unique: true,
-      index: true,
     },
     status: {
       type: String,
       enum: ["pending", "accepted", "revoked", "expired"],
       default: "pending",
-      index: true,
     },
     expiresAt: {
       type: Date,
       required: true,
-      index: true,
     },
     acceptedAt: {
       type: Date,

@@ -7,7 +7,6 @@ const userSchema = new Schema<IUser>(
     organizationId: {
       type: String,
       required: false, // Optional for Platform Admins (SuperAdmin/Admin)
-      index: true,
     },
     email: {
       type: String,
@@ -103,8 +102,7 @@ userSchema.methods.comparePassword = async function (
   }
 };
 
-// Add index for email
-userSchema.index({ email: 1 });
+// Add indexes
 userSchema.index({ organizationId: 1 });
 userSchema.index({ organizationId: 1, email: 1 });
 userSchema.index({ organizationId: 1, role: 1 });

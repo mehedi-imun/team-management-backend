@@ -89,12 +89,10 @@ const organizationSchema = new Schema<
     stripeCustomerId: {
       type: String,
       trim: true,
-      index: true,
     },
     stripeSubscriptionId: {
       type: String,
       trim: true,
-      index: true,
     },
     stripePriceId: {
       type: String,
@@ -170,7 +168,6 @@ const organizationSchema = new Schema<
     ownerId: {
       type: String,
       required: false, // Optional when status is "pending_setup"
-      index: true,
     },
     ownerEmail: {
       type: String,
@@ -186,7 +183,6 @@ const organizationSchema = new Schema<
     setupToken: {
       type: String,
       trim: true,
-      index: true,
     },
     setupTokenExpires: {
       type: Date,
@@ -199,7 +195,6 @@ const organizationSchema = new Schema<
       },
       default: "active",
       required: true,
-      index: true,
     },
 
     // Metadata
@@ -221,12 +216,13 @@ const organizationSchema = new Schema<
 );
 
 // Indexes for performance
-organizationSchema.index({ slug: 1 }, { unique: true });
 organizationSchema.index({ ownerId: 1 });
 organizationSchema.index({ stripeCustomerId: 1 });
 organizationSchema.index({ subscriptionStatus: 1 });
 organizationSchema.index({ plan: 1 });
 organizationSchema.index({ isActive: 1 });
+organizationSchema.index({ status: 1 });
+organizationSchema.index({ setupToken: 1 });
 
 // Virtual fields
 organizationSchema.virtual("isOnTrial").get(function (this: IOrganization) {

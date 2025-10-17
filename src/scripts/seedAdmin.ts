@@ -7,49 +7,44 @@ const seedAdmin = async () => {
     await mongoose.connect(env.DATABASE_URL);
     console.log("✅ Connected to MongoDB");
 
-    // Check if admin already exists
-    const existingAdmin = await User.findOne({ role: "Admin" });
-    if (existingAdmin) {
-      console.log("⚠️  Admin user already exists");
-      console.log(`Email: ${existingAdmin.email}`);
+    // Check if SuperAdmin already exists
+    const existingSuperAdmin = await User.findOne({ role: "SuperAdmin" });
+    if (existingSuperAdmin) {
+      console.log("⚠️  SuperAdmin user already exists");
+      console.log(`Email: ${existingSuperAdmin.email}`);
       process.exit(0);
     }
 
-    // Create admin user
-    const admin = await User.create({
-      email: "admin@teammanagement.com",
-      password: "admin123", // Will be hashed by pre-save hook
-      name: "System Administrator",
-      role: "Admin",
+    // Create SuperAdmin user (Platform Owner)
+    const superAdmin = await User.create({
+      email: "superadmin@teammanagement.com",
+      password: "superadmin123", // Will be hashed by pre-save hook
+      name: "Platform Super Administrator",
+      role: "SuperAdmin",
       isActive: true,
+      isOrganizationOwner: false,
+      isOrganizationAdmin: false,
     });
 
-    console.log("✅ Admin user created successfully:");
-    console.log(`Email: ${admin.email}`);
-    console.log(`Password: admin123`);
-    console.log(`Role: ${admin.role}`);
+    console.log("✅ SuperAdmin user created successfully:");
+    console.log(`Email: ${superAdmin.email}`);
+    console.log(`Password: superadmin123`);
+    console.log(`Role: ${superAdmin.role}`);
     console.log("\n⚠️  IMPORTANT: Change this password after first login!\n");
 
-    // Create sample manager and director
-    const manager = await User.create({
-      email: "manager@teammanagement.com",
-      password: "manager123",
-      name: "Sample Manager",
-      role: "Manager",
+    // Create sample Admin user (Platform Administrator)
+    const admin = await User.create({
+      email: "admin@teammanagement.com",
+      password: "admin123",
+      name: "Platform Administrator",
+      role: "Admin",
       isActive: true,
+      isOrganizationOwner: false,
+      isOrganizationAdmin: false,
     });
 
-    const director = await User.create({
-      email: "director@teammanagement.com",
-      password: "director123",
-      name: "Sample Director",
-      role: "Director",
-      isActive: true,
-    });
-
-    console.log("✅ Sample users created:");
-    console.log(`Manager: ${manager.email} / manager123`);
-    console.log(`Director: ${director.email} / director123`);
+    console.log("✅ Sample Platform Admin created:");
+    console.log(`Admin: ${admin.email} / admin123`);
 
     process.exit(0);
   } catch (error) {
