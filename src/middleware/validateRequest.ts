@@ -8,7 +8,6 @@ import { ZodError, ZodObject, ZodRawShape } from "zod";
 export const validateRequest =
   (zodSchema: ZodObject<ZodRawShape>) =>
   async (req: Request, _res: Response, next: NextFunction) => {
-  
     try {
       // If body.data exists (sent as JSON string), parse it
       if (req.body?.data) {
@@ -36,12 +35,12 @@ export const validateRequest =
 
       // Validate asynchronously
       const validated = await zodSchema.parseAsync(validationData);
-      
+
       // Update request with validated data
       req.body = validated.body;
       if (validated.query) req.query = validated.query as any;
       if (validated.params) req.params = validated.params as any;
-      
+
       next();
     } catch (error) {
       next(error);
