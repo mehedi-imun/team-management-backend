@@ -127,7 +127,9 @@ class StripeService {
     organization.plan = session.metadata?.plan as any;
     organization.billingCycle = session.metadata?.billingCycle as any;
     organization.subscriptionStatus = "active";
-    organization.currentPeriodEnd = new Date((subscription as any).current_period_end * 1000);
+    organization.currentPeriodEnd = new Date(
+      (subscription as any).current_period_end * 1000
+    );
     organization.trialEndsAt = undefined; // Clear trial
 
     await organization.save();
@@ -215,15 +217,21 @@ class StripeService {
   async handleWebhook(event: Stripe.Event) {
     switch (event.type) {
       case "checkout.session.completed":
-        await this.handleCheckoutComplete(event.data.object as Stripe.Checkout.Session);
+        await this.handleCheckoutComplete(
+          event.data.object as Stripe.Checkout.Session
+        );
         break;
 
       case "customer.subscription.updated":
-        await this.handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
+        await this.handleSubscriptionUpdated(
+          event.data.object as Stripe.Subscription
+        );
         break;
 
       case "customer.subscription.deleted":
-        await this.handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+        await this.handleSubscriptionDeleted(
+          event.data.object as Stripe.Subscription
+        );
         break;
 
       case "invoice.payment_succeeded":
@@ -262,7 +270,9 @@ class StripeService {
 
     // Update subscription details
     organization.subscriptionStatus = subscription.status as any;
-    organization.currentPeriodEnd = new Date((subscription as any).current_period_end * 1000);
+    organization.currentPeriodEnd = new Date(
+      (subscription as any).current_period_end * 1000
+    );
     await organization.save();
 
     console.log(`✅ Subscription updated for org: ${organizationId}`);
@@ -282,7 +292,9 @@ class StripeService {
     organization.stripePriceId = undefined;
     await organization.save();
 
-    console.log(`✅ Subscription deleted for org: ${organizationId} - downgraded to FREE`);
+    console.log(
+      `✅ Subscription deleted for org: ${organizationId} - downgraded to FREE`
+    );
   }
 
   private async handlePaymentSucceeded(invoice: Stripe.Invoice) {
@@ -344,7 +356,9 @@ class StripeService {
       plan: organization.plan,
       status: organization.subscriptionStatus,
       hasSubscription: true,
-      currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+      currentPeriodEnd: new Date(
+        (subscription as any).current_period_end * 1000
+      ),
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
       subscription: subscription,
     };

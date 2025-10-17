@@ -14,7 +14,11 @@ const router = express.Router();
 
 // Public routes
 router.post("/login", validateRequest(loginSchema), AuthController.login);
-router.post("/register", validateRequest(registerSchema), AuthController.register);
+router.post(
+  "/register",
+  validateRequest(registerSchema),
+  AuthController.register
+);
 router.post(
   "/setup-organization",
   validateRequest(setupOrganizationSchema),

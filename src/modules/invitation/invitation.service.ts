@@ -88,10 +88,7 @@ const acceptInvitation = async (acceptData: IInvitationAccept) => {
   });
 
   if (!invitation) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Invalid or expired invitation"
-    );
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid or expired invitation");
   }
 
   // Check if user already exists
@@ -143,7 +140,10 @@ const acceptInvitation = async (acceptData: IInvitationAccept) => {
 };
 
 // Revoke invitation
-const revokeInvitation = async (invitationId: string, organizationId: string) => {
+const revokeInvitation = async (
+  invitationId: string,
+  organizationId: string
+) => {
   const invitation = await Invitation.findOne({
     _id: invitationId,
     organizationId,
@@ -182,17 +182,17 @@ const getInvitationByToken = async (token: string) => {
   });
 
   if (!invitation) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Invalid or expired invitation"
-    );
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid or expired invitation");
   }
 
   return invitation;
 };
 
 // Resend invitation email
-const resendInvitation = async (invitationId: string, organizationId: string) => {
+const resendInvitation = async (
+  invitationId: string,
+  organizationId: string
+) => {
   const invitation = await Invitation.findOne({
     _id: invitationId,
     organizationId,

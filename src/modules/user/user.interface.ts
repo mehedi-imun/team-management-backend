@@ -4,24 +4,24 @@ export interface IUser {
   email: string;
   password: string;
   name: string;
-  
+
   // Simplified Role System: Only 3 platform roles
   role: "SuperAdmin" | "Admin" | "Member";
-  
+
   // Organization Permissions (for customers)
   isOrganizationOwner: boolean; // True if user owns their organization
   isOrganizationAdmin: boolean; // True if user is org admin (helper to owner)
-  
+
   // Team Management (for managers)
   managedTeamIds?: string[]; // Array of team IDs this user manages
-  
+
   // Status
   isActive: boolean;
-  
+
   // Password Reset
   passwordResetToken?: string;
   passwordResetExpires?: Date;
-  
+
   // Timestamps
   createdAt?: Date;
   updatedAt?: Date;

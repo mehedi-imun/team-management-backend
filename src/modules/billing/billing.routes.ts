@@ -1,7 +1,9 @@
-import { Router } from "express";
-import express from "express";
+import express, { Router } from "express";
 import { authenticate } from "../../middleware/authenticate";
-import { requiresOrganization, isOrganizationOwner } from "../../middleware/permissions";
+import {
+  isOrganizationOwner,
+  requiresOrganization,
+} from "../../middleware/permissions";
 import { validateRequest } from "../../middleware/validateRequest";
 import billingController from "./billing.controller";
 import { createCheckoutSchema } from "./billing.validation";

@@ -1,7 +1,7 @@
 import { NextFunction, Response } from "express";
 import AppError from "../errors/AppError";
-import { AuthRequest } from "./authenticate";
 import { Team } from "../modules/team/team.model";
+import { AuthRequest } from "./authenticate";
 
 /**
  * Permission Middleware for Multi-tenant RBAC
@@ -40,10 +40,7 @@ export const isPlatformAdmin = (
     (req.user.role === "Admin" && !req.user.organizationId);
 
   if (!isPlatform) {
-    throw new AppError(
-      403,
-      "Forbidden - Requires platform admin privileges"
-    );
+    throw new AppError(403, "Forbidden - Requires platform admin privileges");
   }
 
   next();
@@ -134,10 +131,7 @@ export const canManageTeam = async (
   }
 
   // Check if user is in managedTeamIds
-  if (
-    req.user.managedTeamIds &&
-    req.user.managedTeamIds.includes(teamId)
-  ) {
+  if (req.user.managedTeamIds && req.user.managedTeamIds.includes(teamId)) {
     return next();
   }
 

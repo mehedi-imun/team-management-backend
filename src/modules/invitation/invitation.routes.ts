@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate";
-import { canInviteMembers, requiresOrganization } from "../../middleware/permissions";
+import {
+  canInviteMembers,
+  requiresOrganization,
+} from "../../middleware/permissions";
 import { validateRequest } from "../../middleware/validateRequest";
 import { InvitationController } from "./invitation.controller";
 import {
@@ -37,8 +40,16 @@ router.post(
 
 router.get("/", InvitationController.getInvitations);
 
-router.patch("/:id/revoke", canInviteMembers, InvitationController.revokeInvitation);
+router.patch(
+  "/:id/revoke",
+  canInviteMembers,
+  InvitationController.revokeInvitation
+);
 
-router.post("/:id/resend", canInviteMembers, InvitationController.resendInvitation);
+router.post(
+  "/:id/resend",
+  canInviteMembers,
+  InvitationController.resendInvitation
+);
 
 export const InvitationRoutes = router;
