@@ -216,6 +216,77 @@ const deleteMember = async (
   }
 };
 
+// Add a new team member
+const addMember = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const organizationId = req.organizationId as string;
+    const result = await TeamService.addMember(
+      req.params.teamId,
+      organizationId,
+      req.body
+    );
+    sendResponse(res, {
+      statusCode: httpStatus.CREATED,
+      success: true,
+      message: "Member added to team",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Assign manager to team
+const assignManager = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const organizationId = req.organizationId as string;
+    const { managerId } = req.body;
+    const result = await TeamService.assignManager(
+      req.params.teamId,
+      organizationId,
+      managerId
+    );
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Manager assigned to team",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get teams managed by current user
+const getMyManagedTeams = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const organizationId = req.organizationId as string;
+    const managerId = req.user?._id as string;
+    
+    if (!managerId) {
+      throw new AppError(httpStatus.UNAUTHORIZED, "User not authenticated");
+    }
+    
+    const teams = await TeamService.getTeamsByManager(managerId, organizationId);
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Teams retrieved successfully",
+      data: teams,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const TeamController = {
   createTeam,
   getAllTeams,
@@ -227,4 +298,7 @@ export const TeamController = {
   updateTeamOrder,
   updateMember,
   deleteMember,
+  addMember,
+  assignManager,
+  getMyManagedTeams,
 };

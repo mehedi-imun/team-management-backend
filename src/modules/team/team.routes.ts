@@ -4,7 +4,11 @@ import { tenantContext } from "../../middleware/tenantContext";
 import { checkTeamLimit } from "../../middleware/usageLimits";
 import { validateRequest } from "../../middleware/validateRequest";
 import { TeamController } from "./team.controller";
-import { createTeamSchema } from "./team.validation";
+import {
+  addMemberSchema,
+  assignManagerSchema,
+  createTeamSchema,
+} from "./team.validation";
 
 const router = express.Router();
 
@@ -33,9 +37,24 @@ router.patch("/:teamId/status", TeamController.updateApprovalStatus);
 // Drag & drop order update
 router.post("/order", TeamController.updateTeamOrder);
 
+// Get teams managed by current user (must be before /:teamId routes)
+router.get("/my-managed-teams", TeamController.getMyManagedTeams);
+
 // Team member management
+router.post(
+  "/:teamId/members",
+  validateRequest(addMemberSchema),
+  TeamController.addMember
+);
 router.patch("/:teamId/members/:memberId", TeamController.updateMember);
 router.delete("/:teamId/members/:memberId", TeamController.deleteMember);
+
+// Manager assignment
+router.patch(
+  "/:teamId/manager",
+  validateRequest(assignManagerSchema),
+  TeamController.assignManager
+);
 
 // Export as named export
 export const TeamRoutes = router;

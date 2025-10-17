@@ -230,12 +230,109 @@ const deleteMember = async (
   if (!Types.ObjectId.isValid(teamId) || !Types.ObjectId.isValid(memberId))
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid ID");
 
-  return Team.findOneAndUpdate(
+  const result = await Team.findOneAndUpdate(
     { _id: teamId, organizationId },
     {
       $pull: { members: { _id: memberId } },
-    }
+    },
+    { new: true }
   );
+
+  // Invalidate cache
+  await cacheService.delete(`team:${organizationId}:${teamId}`);
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+
+  return result;
+};
+
+// Add a new team member
+const addMember = async (
+  teamId: string,
+  organizationId: string,
+  memberData: { email: string; name?: string; role?: "TeamLead" | "Member" }
+) => {
+  if (!Types.ObjectId.isValid(teamId))
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
+
+  // Check if team exists
+  const team = await Team.findOne({ _id: teamId, organizationId });
+  if (!team) {
+    throw new AppError(httpStatus.NOT_FOUND, "Team not found");
+  }
+
+  // Check if member already exists in team
+  const memberExists = team.members.some((m) => m.email === memberData.email);
+  if (memberExists) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Member already in team");
+  }
+
+  // Add member to team
+  const newMember: any = {
+    email: memberData.email,
+    name: memberData.name || "",
+    role: memberData.role || "Member",
+    joinedAt: new Date(),
+    isActive: true,
+  };
+
+  const result = await Team.findOneAndUpdate(
+    { _id: teamId, organizationId },
+    { $push: { members: newMember } },
+    { new: true }
+  );
+
+  // Invalidate cache
+  await cacheService.delete(`team:${organizationId}:${teamId}`);
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+
+  return result;
+};
+
+// Assign manager to team
+const assignManager = async (
+  teamId: string,
+  organizationId: string,
+  managerId: string
+) => {
+  if (!Types.ObjectId.isValid(teamId))
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
+
+  // Check if team exists
+  const team = await Team.findOne({ _id: teamId, organizationId });
+  if (!team) {
+    throw new AppError(httpStatus.NOT_FOUND, "Team not found");
+  }
+
+  const result = await Team.findOneAndUpdate(
+    { _id: teamId, organizationId },
+    { managerId },
+    { new: true }
+  );
+
+  // Invalidate cache
+  await cacheService.delete(`team:${organizationId}:${teamId}`);
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+
+  return result;
+};
+
+// Get teams managed by a specific manager
+const getTeamsByManager = async (managerId: string, organizationId: string) => {
+  const cacheKey = `teams:${organizationId}:manager:${managerId}`;
+
+  // Try cache
+  const cached = await cacheService.get<ITeam[]>(cacheKey);
+  if (cached) {
+    console.log(`✅ Cache hit for manager teams (org: ${organizationId})`);
+    return cached;
+  }
+
+  const teams = await Team.find({ organizationId, managerId, isActive: true });
+
+  // Cache for 5 minutes
+  await cacheService.set(cacheKey, teams, 300);
+
+  return teams;
 };
 
 export const TeamService = {
@@ -249,4 +346,7 @@ export const TeamService = {
   updateTeamOrder,
   updateMember,
   deleteMember,
+  addMember,
+  assignManager,
+  getTeamsByManager,
 };

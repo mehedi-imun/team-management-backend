@@ -174,6 +174,39 @@ class EmailService {
       return false;
     }
   }
+
+  // Generic send email method
+  async sendEmail(options: {
+    to: string;
+    subject: string;
+    html: string;
+    from?: string;
+  }) {
+    try {
+      const transporter = await this.getTransporter();
+      if (!transporter) return false;
+
+      await transporter.sendMail({
+        from: options.from || `"Team Management" <${envConfig.EMAIL_FROM}>`,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+      });
+      console.log(`✅ Email sent to ${options.to}: ${options.subject}`);
+      return true;
+    } catch (error) {
+      console.error("❌ Email error:", error);
+      return false;
+    }
+  }
 }
 
 export const emailService = new EmailService();
+
+// Export sendEmail as a standalone function for convenience
+export const sendEmail = (options: {
+  to: string;
+  subject: string;
+  html: string;
+  from?: string;
+}) => emailService.sendEmail(options);

@@ -27,6 +27,22 @@ export const updateStatusSchema = z.object({
   value: approvalStatusEnum,
 });
 
+// Add team member schema
+export const addMemberSchema = z.object({
+  body: z.object({
+    email: z.string().email("Invalid email format"),
+    name: z.string().min(1, "Member name required").optional(),
+    role: z.enum(["TeamLead", "Member"]).optional(),
+  }),
+});
+
+// Assign manager schema
+export const assignManagerSchema = z.object({
+  body: z.object({
+    managerId: z.string().min(1, "Manager ID required"),
+  }),
+});
+
 // Update team order (drag & drop)
 export const orderSchema = z.object({
   orderList: z.array(
