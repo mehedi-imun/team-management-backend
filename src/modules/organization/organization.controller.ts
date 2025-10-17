@@ -202,19 +202,14 @@ class OrganizationController {
    * GET /api/v1/organizations/all
    */
   getAllOrganizations = catchAsync(async (req: Request, res: Response) => {
-    const { status, plan, search } = req.query;
-
-    const organizations = await organizationService.getAllOrganizations({
-      status: status as string,
-      plan: plan as string,
-      search: search as string,
-    });
+    const result = await organizationService.getAllOrganizations(req.query);
 
     sendResponse(res, {
       statusCode: 200,
       success: true,
       message: "All organizations retrieved successfully",
-      data: organizations,
+      data: result.data,
+      meta: result.meta,
     });
   });
 
@@ -251,6 +246,30 @@ class OrganizationController {
         success: true,
         message: "Organization permanently deleted",
         data: null,
+      });
+    }
+  );
+
+  /**
+   * Create organization for client (SuperAdmin/Admin only)
+   * POST /api/v1/organizations/create-for-client
+   */
+  createOrganizationForClient = catchAsync(
+    async (req: Request, res: Response) => {
+      const { name, ownerEmail, ownerName, plan } = req.body;
+
+      const result = await organizationService.createOrganizationForClient({
+        name,
+        ownerEmail,
+        ownerName,
+        plan,
+      });
+
+      sendResponse(res, {
+        statusCode: 201,
+        success: true,
+        message: "Organization created successfully. Owner will receive setup instructions via email.",
+        data: result,
       });
     }
   );

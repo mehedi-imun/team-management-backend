@@ -1,6 +1,7 @@
 import { nanoid } from "nanoid";
 import AppError from "../../errors/AppError";
 import { cacheService } from "../../services/cache.service";
+import QueryBuilder from "../../utils/queryBuilder";
 import {
   IOrganization,
   IOrganizationCreate,
@@ -378,30 +379,34 @@ class OrganizationService {
   /**
    * Get all organizations (platform admin only)
    */
-  async getAllOrganizations(filters?: {
-    status?: string;
-    plan?: string;
-    search?: string;
-  }): Promise<IOrganization[]> {
-    const query: any = {};
-
-    if (filters?.status) {
-      query.status = filters.status;
+  async getAllOrganizations(query: any): Promise<{ data: IOrganization[], meta: any }> {
+    const searchableFields = ["name", "slug", "ownerEmail"];
+    
+    // Map 'search' to 'searchTerm' for QueryBuilder compatibility
+    const mappedQuery = { ...query };
+    if (mappedQuery.search) {
+      mappedQuery.searchTerm = mappedQuery.search;
+      delete mappedQuery.search;
     }
+    
+    const queryBuilder = new QueryBuilder<IOrganization>(
+      Organization.find(),
+      mappedQuery
+    );
 
-    if (filters?.plan) {
-      query.plan = filters.plan;
-    }
+    const orgQuery = queryBuilder
+      .search(searchableFields)
+      .filter()
+      .sort()
+      .paginate()
+      .fields();
 
-    if (filters?.search) {
-      query.$or = [
-        { name: { $regex: filters.search, $options: "i" } },
-        { slug: { $regex: filters.search, $options: "i" } },
-        { ownerEmail: { $regex: filters.search, $options: "i" } },
-      ];
-    }
+    const [data, meta] = await Promise.all([
+      orgQuery.build().exec(),
+      queryBuilder.countTotal(),
+    ]);
 
-    return Organization.find(query).sort({ createdAt: -1 });
+    return { data, meta };
   }
 
   /**
@@ -441,6 +446,93 @@ class OrganizationService {
 
     // Invalidate cache
     await cacheService.delete(`organization:${organizationId}`);
+  }
+
+  /**
+   * Create organization for client (SuperAdmin/Admin only)
+   */
+  async createOrganizationForClient(data: {
+    name: string;
+    ownerEmail: string;
+    ownerName: string;
+    plan: "free" | "professional" | "business" | "enterprise";
+  }): Promise<{ organization: IOrganization; temporaryPassword: string }> {
+    const User = require("../user/user.model").User;
+    const bcrypt = require("bcryptjs");
+
+    // Check if organization name already exists
+    const existingOrg = await Organization.findOne({ name: data.name });
+    if (existingOrg) {
+      throw new AppError(409, "Organization with this name already exists");
+    }
+
+    // Check if user already exists
+    let user = await User.findOne({ email: data.ownerEmail });
+    
+    let temporaryPassword = "";
+    let isNewUser = false;
+
+    if (!user) {
+      // Create new user with temporary password
+      temporaryPassword = nanoid(12);
+      const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+
+      user = await User.create({
+        email: data.ownerEmail,
+        name: data.ownerName,
+        password: hashedPassword,
+        role: "Member",
+        isOrganizationOwner: false,
+        isOrganizationAdmin: false,
+        managedTeamIds: [],
+        status: "active",
+      });
+
+      isNewUser = true;
+    }
+
+    // Generate slug from organization name
+    const slug = data.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    // Check if slug already exists
+    let finalSlug = slug;
+    let counter = 1;
+    while (await Organization.findOne({ slug: finalSlug })) {
+      finalSlug = `${slug}-${counter}`;
+      counter++;
+    }
+
+    // Create organization (limits will be set automatically by pre-save hook based on plan)
+    const organization = await Organization.create({
+      name: data.name,
+      slug: finalSlug,
+      ownerId: user._id,
+      ownerEmail: data.ownerEmail,
+      ownerName: data.ownerName,
+      plan: data.plan,
+      status: "active", // Organization status: active, pending_setup, or suspended
+      subscriptionStatus: "trialing", // Subscription status for billing
+      trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      // Usage and limits are set automatically by the model based on plan
+      usage: {
+        users: 1, // Owner counts as first user
+        teams: 0,
+        storage: "0MB",
+      },
+    });
+
+    // Update user to be organization owner
+    user.organizationId = organization._id;
+    user.isOrganizationOwner = true;
+    await user.save();
+
+    // Invalidate cache
+    await cacheService.delete("organizations:all");
+
+    return { organization, temporaryPassword: isNewUser ? temporaryPassword : "" };
   }
 }
 

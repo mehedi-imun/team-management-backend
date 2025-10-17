@@ -67,6 +67,7 @@ const userSchema = new Schema<IUser>(
   {
     timestamps: true,
     toJSON: {
+      virtuals: true, // Enable virtuals in JSON output
       transform: (_doc, ret) => {
         delete (ret as any).password;
         delete (ret as any).passwordResetToken;
@@ -75,8 +76,16 @@ const userSchema = new Schema<IUser>(
         return ret;
       },
     },
+    toObject: {
+      virtuals: true, // Enable virtuals in object output
+    },
   }
 );
+
+// Virtual field: status based on isActive
+userSchema.virtual("status").get(function () {
+  return this.isActive ? "active" : "suspended";
+});
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {

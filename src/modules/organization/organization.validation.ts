@@ -74,3 +74,28 @@ export const checkSlugSchema = z.object({
       .min(1),
   }),
 });
+
+export const createOrganizationForClientSchema = z.object({
+  body: z.object({
+    name: z
+      .string({
+        message: "Organization name is required",
+      })
+      .min(2, "Organization name must be at least 2 characters")
+      .max(100, "Organization name cannot exceed 100 characters"),
+    ownerEmail: z
+      .string({
+        message: "Owner email is required",
+      })
+      .email("Invalid email address"),
+    ownerName: z
+      .string({
+        message: "Owner name is required",
+      })
+      .min(2, "Owner name must be at least 2 characters")
+      .max(100, "Owner name cannot exceed 100 characters"),
+    plan: z.enum(["free", "professional", "business", "enterprise"], {
+      message: "Invalid plan selected",
+    }),
+  }),
+});

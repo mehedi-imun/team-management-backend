@@ -14,7 +14,15 @@ import { User } from "./user.model";
 // Get all users with pagination, search, filter
 const getAllUsers = async (query: any) => {
   const searchableFields = ["name", "email"];
-  const queryBuilder = new QueryBuilder<IUser>(User.find(), query);
+  
+  // Map 'search' to 'searchTerm' for QueryBuilder compatibility
+  const mappedQuery = { ...query };
+  if (mappedQuery.search) {
+    mappedQuery.searchTerm = mappedQuery.search;
+    delete mappedQuery.search;
+  }
+  
+  const queryBuilder = new QueryBuilder<IUser>(User.find(), mappedQuery);
 
   const userQuery = queryBuilder
     .search(searchableFields)
@@ -186,9 +194,12 @@ const updateUserStatus = async (
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid user ID");
   }
 
+  // Convert status to isActive boolean
+  const isActive = status === "active";
+
   const user = await User.findByIdAndUpdate(
     id,
-    { status },
+    { isActive },
     { new: true, runValidators: true }
   );
 

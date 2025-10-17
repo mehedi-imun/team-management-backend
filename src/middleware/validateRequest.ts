@@ -27,8 +27,21 @@ export const validateRequest =
         }
       }
 
+      // Prepare validation data - wrap in appropriate structure
+      const validationData = {
+        body: req.body,
+        query: req.query,
+        params: req.params,
+      };
+
       // Validate asynchronously
-      req.body = await zodSchema.parseAsync(req.body);
+      const validated = await zodSchema.parseAsync(validationData);
+      
+      // Update request with validated data
+      req.body = validated.body;
+      if (validated.query) req.query = validated.query as any;
+      if (validated.params) req.params = validated.params as any;
+      
       next();
     } catch (error) {
       next(error);

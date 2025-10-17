@@ -32,13 +32,22 @@ class QueryBuilder<T> {
    */
   filter(): this {
     const queryObj = { ...this.query };
-    const excludeFields = ["searchTerm", "sort", "limit", "page", "fields"];
+    const excludeFields = ["searchTerm", "sort", "limit", "page", "fields", "search"];
 
+    // Remove reserved fields
     for (const field of excludeFields) {
       delete queryObj[field];
     }
 
-    this.modelQuery = this.modelQuery.find(queryObj as FilterQuery<T>);
+    // Remove fields with empty values or "all" value
+    const cleanedQuery: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(queryObj)) {
+      if (value && value !== "" && value !== "all") {
+        cleanedQuery[key] = value;
+      }
+    }
+
+    this.modelQuery = this.modelQuery.find(cleanedQuery as FilterQuery<T>);
     return this;
   }
 

@@ -17,6 +17,7 @@ export interface IUser {
 
   // Status
   isActive: boolean;
+  status?: "active" | "suspended" | "inactive"; // Virtual field based on isActive
 
   // Password Reset
   passwordResetToken?: string;

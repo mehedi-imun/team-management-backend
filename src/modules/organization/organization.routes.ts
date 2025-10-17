@@ -6,6 +6,7 @@ import organizationController from "./organization.controller";
 import {
   checkSlugSchema,
   createOrganizationSchema,
+  createOrganizationForClientSchema,
   updateOrganizationSchema,
   upgradePlanSchema,
 } from "./organization.validation";
@@ -53,6 +54,18 @@ router.post(
   "/create-with-setup",
   authorize("SuperAdmin", "Admin"),
   organizationController.createOrganizationWithSetup
+);
+
+/**
+ * @route   POST /api/v1/organizations/create-for-client
+ * @desc    Create organization for client (SuperAdmin/Admin only)
+ * @access  Private (SuperAdmin/Admin)
+ */
+router.post(
+  "/create-for-client",
+  authorize("SuperAdmin", "Admin"),
+  validateRequest(createOrganizationForClientSchema),
+  organizationController.createOrganizationForClient
 );
 
 /**
