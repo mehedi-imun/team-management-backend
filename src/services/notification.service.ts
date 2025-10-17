@@ -42,7 +42,9 @@ export const checkTrialExpiryAndNotify = async () => {
       // Send reminder email
       await sendEmail({
         to: owner.email,
-        subject: `Your ${org.name} trial expires in ${trialDaysLeft} day${trialDaysLeft > 1 ? "s" : ""}`,
+        subject: `Your ${org.name} trial expires in ${trialDaysLeft} day${
+          trialDaysLeft > 1 ? "s" : ""
+        }`,
         html: generateTrialExpiryEmail(org.name, trialDaysLeft, org.plan),
       });
 
@@ -74,7 +76,9 @@ export const checkExpiredTrialsAndSuspend = async () => {
       isActive: true,
     });
 
-    console.log(`Found ${expiredOrgs.length} organizations with expired trials`);
+    console.log(
+      `Found ${expiredOrgs.length} organizations with expired trials`
+    );
 
     for (const org of expiredOrgs) {
       // Update subscription status
@@ -183,7 +187,9 @@ function generateTrialExpiryEmail(
           <p>Your free trial for <strong>${orgName}</strong> is ending soon!</p>
           
           <div class="warning">
-            <strong>⚠️ ${daysLeft} day${daysLeft > 1 ? "s" : ""} remaining</strong>
+            <strong>⚠️ ${daysLeft} day${
+    daysLeft > 1 ? "s" : ""
+  } remaining</strong>
             <p style="margin: 10px 0 0 0;">After your trial expires, your organization will be suspended until you upgrade to a paid plan.</p>
           </div>
 
@@ -197,7 +203,9 @@ function generateTrialExpiryEmail(
           <h3>Upgrade now to continue:</h3>
           <p>Choose from our flexible plans starting at just $10/month</p>
           
-          <a href="${process.env.FRONTEND_URL}/dashboard/billing" class="button">
+          <a href="${
+            process.env.FRONTEND_URL
+          }/dashboard/billing" class="button">
             🚀 Upgrade Now
           </a>
 
@@ -213,7 +221,10 @@ function generateTrialExpiryEmail(
   `;
 }
 
-function generateTrialExpiredEmail(orgName: string, currentPlan: string): string {
+function generateTrialExpiredEmail(
+  orgName: string,
+  currentPlan: string
+): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -245,7 +256,9 @@ function generateTrialExpiredEmail(orgName: string, currentPlan: string): string
           <h3>Reactivate your organization:</h3>
           <p>Upgrade to a paid plan to restore full access immediately!</p>
           
-          <a href="${process.env.FRONTEND_URL}/dashboard/billing" class="button">
+          <a href="${
+            process.env.FRONTEND_URL
+          }/dashboard/billing" class="button">
             🔓 Upgrade & Reactivate
           </a>
 
@@ -356,7 +369,9 @@ function generateTeamManagerAssignedEmail(
             📂 Manage Team
           </a>
 
-          <p>Need help with your new role? Check out our <a href="${process.env.FRONTEND_URL}/docs/manager-guide">Manager's Guide</a>.</p>
+          <p>Need help with your new role? Check out our <a href="${
+            process.env.FRONTEND_URL
+          }/docs/manager-guide">Manager's Guide</a>.</p>
         </div>
         <div class="footer">
           <p>Team Management System | © ${new Date().getFullYear()}</p>

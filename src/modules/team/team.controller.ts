@@ -270,12 +270,15 @@ const getMyManagedTeams = async (
   try {
     const organizationId = req.organizationId as string;
     const managerId = req.user?._id as string;
-    
+
     if (!managerId) {
       throw new AppError(httpStatus.UNAUTHORIZED, "User not authenticated");
     }
-    
-    const teams = await TeamService.getTeamsByManager(managerId, organizationId);
+
+    const teams = await TeamService.getTeamsByManager(
+      managerId,
+      organizationId
+    );
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
