@@ -1,7 +1,7 @@
 import { cacheService } from "../../services/cache.service";
+import { Organization } from "../organization/organization.model";
 import { Team } from "../team/team.model";
 import { User } from "../user/user.model";
-import { Organization } from "../organization/organization.model";
 import {
   IAnalyticsSummary,
   IApprovalRate,

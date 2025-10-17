@@ -429,9 +429,7 @@ class OrganizationService {
   /**
    * Delete organization permanently (SuperAdmin only)
    */
-  async deleteOrganizationPermanently(
-    organizationId: string
-  ): Promise<void> {
+  async deleteOrganizationPermanently(organizationId: string): Promise<void> {
     const organization = await Organization.findById(organizationId);
 
     if (!organization) {

@@ -222,23 +222,21 @@ class OrganizationController {
    * Update organization status (SuperAdmin/Admin only)
    * PATCH /api/v1/organizations/:id/status
    */
-  updateOrganizationStatus = catchAsync(
-    async (req: Request, res: Response) => {
-      const { status } = req.body;
+  updateOrganizationStatus = catchAsync(async (req: Request, res: Response) => {
+    const { status } = req.body;
 
-      const organization = await organizationService.updateOrganizationStatus(
-        req.params.id,
-        status
-      );
+    const organization = await organizationService.updateOrganizationStatus(
+      req.params.id,
+      status
+    );
 
-      sendResponse(res, {
-        statusCode: 200,
-        success: true,
-        message: "Organization status updated successfully",
-        data: organization,
-      });
-    }
-  );
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Organization status updated successfully",
+      data: organization,
+    });
+  });
 
   /**
    * Delete organization permanently (SuperAdmin only)
