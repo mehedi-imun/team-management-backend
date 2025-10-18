@@ -1,20 +1,20 @@
 /**
  * Example Route Implementations with New Role System
- * 
+ *
  * This file demonstrates how to use the permission-based
  * authorization system in your routes.
  */
 
 import { Router } from "express";
 import { authenticate } from "../middleware/authenticate";
+import { Permission, UserRole } from "../modules/role/role.constants";
 import {
-  requirePermission,
-  requireRole,
-  requirePlatformAdmin,
   requireOrganization,
   requireOrganizationAccess,
+  requirePermission,
+  requirePlatformAdmin,
+  requireRole,
 } from "../modules/role/role.middleware";
-import { Permission, UserRole } from "../modules/role/role.constants";
 
 const router = Router();
 
@@ -28,7 +28,7 @@ const router = Router();
 router.get(
   "/platform/organizations",
   authenticate,
-  requirePlatformAdmin, // Shorthand for SuperAdmin + Admin
+  requirePlatformAdmin // Shorthand for SuperAdmin + Admin
   // OrganizationController.getAllOrganizations
 );
 
@@ -40,7 +40,7 @@ router.get(
 router.post(
   "/platform/organizations",
   authenticate,
-  requirePermission(Permission.PLATFORM_CREATE_ORGANIZATION),
+  requirePermission(Permission.PLATFORM_CREATE_ORGANIZATION)
   // OrganizationController.createOrganization
 );
 
@@ -52,7 +52,7 @@ router.post(
 router.put(
   "/platform/organizations/:organizationId/suspend",
   authenticate,
-  requirePermission(Permission.PLATFORM_SUSPEND_ORGANIZATION),
+  requirePermission(Permission.PLATFORM_SUSPEND_ORGANIZATION)
   // OrganizationController.suspendOrganization
 );
 
@@ -64,7 +64,7 @@ router.put(
 router.get(
   "/platform/analytics",
   authenticate,
-  requirePermission(Permission.PLATFORM_VIEW_ANALYTICS),
+  requirePermission(Permission.PLATFORM_VIEW_ANALYTICS)
   // AnalyticsController.getPlatformAnalytics
 );
 
@@ -76,7 +76,7 @@ router.get(
 router.post(
   "/platform/admins",
   authenticate,
-  requireRole(UserRole.SUPER_ADMIN), // Only SuperAdmin can create admins
+  requireRole(UserRole.SUPER_ADMIN) // Only SuperAdmin can create admins
   // UserController.createPlatformAdmin
 );
 
@@ -88,7 +88,7 @@ router.post(
 router.put(
   "/platform/billing-plans",
   authenticate,
-  requirePermission(Permission.PLATFORM_MANAGE_BILLING_PLANS),
+  requirePermission(Permission.PLATFORM_MANAGE_BILLING_PLANS)
   // BillingController.updatePlans
 );
 
@@ -103,7 +103,7 @@ router.get(
   "/org/settings",
   authenticate,
   requireOrganization, // Must belong to an organization
-  requirePermission(Permission.ORG_VIEW_SETTINGS),
+  requirePermission(Permission.ORG_VIEW_SETTINGS)
   // OrganizationController.getSettings
 );
 
@@ -116,7 +116,7 @@ router.put(
   "/org/settings",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_UPDATE_SETTINGS),
+  requirePermission(Permission.ORG_UPDATE_SETTINGS)
   // OrganizationController.updateSettings
 );
 
@@ -129,7 +129,7 @@ router.get(
   "/org/billing",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_VIEW_BILLING),
+  requirePermission(Permission.ORG_VIEW_BILLING)
   // BillingController.getBilling
 );
 
@@ -142,7 +142,7 @@ router.post(
   "/org/billing/upgrade",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_UPGRADE_PLAN),
+  requirePermission(Permission.ORG_UPGRADE_PLAN)
   // BillingController.upgradePlan
 );
 
@@ -155,7 +155,7 @@ router.delete(
   "/org",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_DELETE_ORGANIZATION),
+  requirePermission(Permission.ORG_DELETE_ORGANIZATION)
   // OrganizationController.deleteOrganization
 );
 
@@ -170,7 +170,7 @@ router.get(
   "/org/members",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_VIEW_MEMBERS),
+  requirePermission(Permission.ORG_VIEW_MEMBERS)
   // MemberController.getMembers
 );
 
@@ -183,7 +183,7 @@ router.post(
   "/org/members/invite",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_INVITE_MEMBERS),
+  requirePermission(Permission.ORG_INVITE_MEMBERS)
   // MemberController.inviteMember
 );
 
@@ -197,7 +197,7 @@ router.put(
   "/org/members/:memberId/role",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_UPDATE_MEMBER_ROLE),
+  requirePermission(Permission.ORG_UPDATE_MEMBER_ROLE)
   // MemberController.updateMemberRole
 );
 
@@ -210,7 +210,7 @@ router.delete(
   "/org/members/:memberId",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_REMOVE_MEMBERS),
+  requirePermission(Permission.ORG_REMOVE_MEMBERS)
   // MemberController.removeMember
 );
 
@@ -223,7 +223,7 @@ router.post(
   "/org/members/:memberId/make-admin",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_MANAGE_ADMINS),
+  requirePermission(Permission.ORG_MANAGE_ADMINS)
   // MemberController.promoteToAdmin
 );
 
@@ -238,7 +238,7 @@ router.get(
   "/org/teams",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_VIEW_TEAMS),
+  requirePermission(Permission.ORG_VIEW_TEAMS)
   // TeamController.getTeams
 );
 
@@ -251,7 +251,7 @@ router.post(
   "/org/teams",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_CREATE_TEAM),
+  requirePermission(Permission.ORG_CREATE_TEAM)
   // TeamController.createTeam
 );
 
@@ -264,7 +264,7 @@ router.put(
   "/org/teams/:teamId",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_UPDATE_TEAM),
+  requirePermission(Permission.ORG_UPDATE_TEAM)
   // TeamController.updateTeam
 );
 
@@ -277,7 +277,7 @@ router.delete(
   "/org/teams/:teamId",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_DELETE_TEAM),
+  requirePermission(Permission.ORG_DELETE_TEAM)
   // TeamController.deleteTeam
 );
 
@@ -290,7 +290,7 @@ router.post(
   "/org/teams/:teamId/members",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_MANAGE_TEAM_MEMBERS),
+  requirePermission(Permission.ORG_MANAGE_TEAM_MEMBERS)
   // TeamController.addMember
 );
 
@@ -303,7 +303,7 @@ router.delete(
   "/org/teams/:teamId/members/:memberId",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_MANAGE_TEAM_MEMBERS),
+  requirePermission(Permission.ORG_MANAGE_TEAM_MEMBERS)
   // TeamController.removeMember
 );
 
@@ -318,7 +318,7 @@ router.get(
   "/org/analytics",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_VIEW_ANALYTICS),
+  requirePermission(Permission.ORG_VIEW_ANALYTICS)
   // AnalyticsController.getOrgAnalytics
 );
 
@@ -331,7 +331,7 @@ router.get(
   "/org/reports",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_VIEW_REPORTS),
+  requirePermission(Permission.ORG_VIEW_REPORTS)
   // ReportController.getReports
 );
 
@@ -344,7 +344,7 @@ router.post(
   "/org/reports/export",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_EXPORT_REPORTS),
+  requirePermission(Permission.ORG_EXPORT_REPORTS)
   // ReportController.exportReports
 );
 
@@ -359,7 +359,7 @@ router.get(
   "/org/invitations",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_VIEW_INVITATIONS),
+  requirePermission(Permission.ORG_VIEW_INVITATIONS)
   // InvitationController.getInvitations
 );
 
@@ -372,7 +372,7 @@ router.post(
   "/org/invitations",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_SEND_INVITATIONS),
+  requirePermission(Permission.ORG_SEND_INVITATIONS)
   // InvitationController.sendInvitation
 );
 
@@ -385,7 +385,7 @@ router.delete(
   "/org/invitations/:invitationId",
   authenticate,
   requireOrganization,
-  requirePermission(Permission.ORG_CANCEL_INVITATIONS),
+  requirePermission(Permission.ORG_CANCEL_INVITATIONS)
   // InvitationController.cancelInvitation
 );
 
@@ -399,7 +399,7 @@ router.delete(
 router.get(
   "/profile",
   authenticate,
-  requirePermission(Permission.VIEW_PROFILE),
+  requirePermission(Permission.VIEW_PROFILE)
   // UserController.getProfile
 );
 
@@ -411,7 +411,7 @@ router.get(
 router.put(
   "/profile",
   authenticate,
-  requirePermission(Permission.UPDATE_PROFILE),
+  requirePermission(Permission.UPDATE_PROFILE)
   // UserController.updateProfile
 );
 
@@ -425,7 +425,7 @@ router.put(
 router.get(
   "/dashboard",
   authenticate,
-  requirePermission(Permission.VIEW_DASHBOARD),
+  requirePermission(Permission.VIEW_DASHBOARD)
   // DashboardController.getDashboard
 );
 
@@ -438,10 +438,7 @@ router.get(
 router.get(
   "/teams/view",
   authenticate,
-  requirePermission(
-    Permission.ORG_VIEW_TEAMS,
-    Permission.TEAM_VIEW_OWN
-  ),
+  requirePermission(Permission.ORG_VIEW_TEAMS, Permission.TEAM_VIEW_OWN)
   // TeamController.viewTeams
 );
 
@@ -453,7 +450,7 @@ router.get(
   "/organizations/:organizationId/data",
   authenticate,
   requireOrganizationAccess, // Checks params.organizationId matches user.organizationId
-  requirePermission(Permission.ORG_VIEW_SETTINGS),
+  requirePermission(Permission.ORG_VIEW_SETTINGS)
   // OrganizationController.getData
 );
 
@@ -464,11 +461,7 @@ router.get(
 router.get(
   "/admin-dashboard",
   authenticate,
-  requireRole(
-    UserRole.SUPER_ADMIN,
-    UserRole.ADMIN,
-    UserRole.ORG_OWNER
-  ),
+  requireRole(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.ORG_OWNER)
   // DashboardController.getAdminDashboard
 );
 

@@ -1,6 +1,6 @@
 /**
  * Comprehensive Role Management System for SaaS Team Management Platform
- * 
+ *
  * Role Hierarchy:
  * 1. SuperAdmin - Platform owner, complete access
  * 2. Admin - Platform administrator, manages organizations
@@ -301,13 +301,20 @@ export const hasHigherRole = (roleA: UserRole, roleB: UserRole): boolean => {
 /**
  * Check if roleA can manage roleB
  */
-export const canManageRole = (managerRole: UserRole, targetRole: UserRole): boolean => {
+export const canManageRole = (
+  managerRole: UserRole,
+  targetRole: UserRole
+): boolean => {
   // SuperAdmin can manage everyone
   if (managerRole === UserRole.SUPER_ADMIN) return true;
 
   // Admin can manage organization roles
   if (managerRole === UserRole.ADMIN) {
-    return [UserRole.ORG_OWNER, UserRole.ORG_ADMIN, UserRole.ORG_MEMBER].includes(targetRole);
+    return [
+      UserRole.ORG_OWNER,
+      UserRole.ORG_ADMIN,
+      UserRole.ORG_MEMBER,
+    ].includes(targetRole);
   }
 
   // OrgOwner can manage OrgAdmin and OrgMember
@@ -334,5 +341,7 @@ export const isPlatformAdmin = (role: UserRole): boolean => {
  * Check if a user is an organization role
  */
 export const isOrganizationRole = (role: UserRole): boolean => {
-  return [UserRole.ORG_OWNER, UserRole.ORG_ADMIN, UserRole.ORG_MEMBER].includes(role);
+  return [UserRole.ORG_OWNER, UserRole.ORG_ADMIN, UserRole.ORG_MEMBER].includes(
+    role
+  );
 };

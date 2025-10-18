@@ -1,22 +1,23 @@
-import mongoose from "mongoose";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 import path from "path";
 
 // Load environment variables
 dotenv.config({ path: path.join(process.cwd(), ".env") });
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/team-management";
+const MONGODB_URI =
+  process.env.MONGODB_URI || "mongodb://localhost:27017/team-management";
 
 /**
  * Role Migration Script
- * 
+ *
  * Migrates from old role system to new role system:
- * 
+ *
  * OLD:
  * - role: "SuperAdmin" | "Admin" | "Member"
  * - isOrganizationOwner: boolean
  * - isOrganizationAdmin: boolean
- * 
+ *
  * NEW:
  * - role: "SuperAdmin" | "Admin" | "OrgOwner" | "OrgAdmin" | "OrgMember"
  */
@@ -47,7 +48,9 @@ async function migrateRoles() {
 
     // Get current statistics
     const totalUsers = await usersCollection.countDocuments();
-    const superAdmins = await usersCollection.countDocuments({ role: "SuperAdmin" });
+    const superAdmins = await usersCollection.countDocuments({
+      role: "SuperAdmin",
+    });
     const admins = await usersCollection.countDocuments({ role: "Admin" });
     const members = await usersCollection.countDocuments({ role: "Member" });
     const orgOwners = await usersCollection.countDocuments({
@@ -227,22 +230,36 @@ async function migrateRoles() {
     // Show sample users from each role
     console.log("\n📋 Sample Users by Role:");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    
-    const roleTypes = ["SuperAdmin", "Admin", "OrgOwner", "OrgAdmin", "OrgMember"];
+
+    const roleTypes = [
+      "SuperAdmin",
+      "Admin",
+      "OrgOwner",
+      "OrgAdmin",
+      "OrgMember",
+    ];
     for (const roleType of roleTypes) {
-      const sample = await usersCollection
-        .findOne({ role: roleType }, { projection: { email: 1, name: 1, role: 1, organizationId: 1 } });
+      const sample = await usersCollection.findOne(
+        { role: roleType },
+        { projection: { email: 1, name: 1, role: 1, organizationId: 1 } }
+      );
       if (sample) {
         console.log(`\n${roleType}:`);
         console.log(`  Email: ${sample.email}`);
         console.log(`  Name: ${sample.name}`);
-        console.log(`  Organization ID: ${sample.organizationId || "N/A (Platform Admin)"}`);
+        console.log(
+          `  Organization ID: ${
+            sample.organizationId || "N/A (Platform Admin)"
+          }`
+        );
       }
     }
 
     console.log("\n\n🎉 Migration completed successfully!");
     console.log("\n📝 Next Steps:");
-    console.log("1. Update User model to remove isOrganizationOwner and isOrganizationAdmin fields");
+    console.log(
+      "1. Update User model to remove isOrganizationOwner and isOrganizationAdmin fields"
+    );
     console.log("2. Update User interface to use new role enum");
     console.log("3. Update frontend role mapping");
     console.log("4. Test all role-based features");

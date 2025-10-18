@@ -108,10 +108,7 @@ export const requirePlatformAdmin = (
 
     const userRole = req.user.role as UserRole;
 
-    if (
-      userRole !== UserRole.SUPER_ADMIN &&
-      userRole !== UserRole.ADMIN
-    ) {
+    if (userRole !== UserRole.SUPER_ADMIN && userRole !== UserRole.ADMIN) {
       throw new AppError(403, "Platform administrator access required");
     }
 
@@ -136,10 +133,7 @@ export const requireOrganization = (
 
     // Platform admins don't need organizationId
     const userRole = req.user.role as UserRole;
-    if (
-      userRole === UserRole.SUPER_ADMIN ||
-      userRole === UserRole.ADMIN
-    ) {
+    if (userRole === UserRole.SUPER_ADMIN || userRole === UserRole.ADMIN) {
       return next();
     }
 
@@ -171,10 +165,7 @@ export const requireOrganizationAccess = (
       req.params.organizationId || req.body.organizationId;
 
     // Platform admins can access any organization
-    if (
-      userRole === UserRole.SUPER_ADMIN ||
-      userRole === UserRole.ADMIN
-    ) {
+    if (userRole === UserRole.SUPER_ADMIN || userRole === UserRole.ADMIN) {
       return next();
     }
 
