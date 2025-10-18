@@ -3,9 +3,9 @@ import httpStatus from "http-status";
 import { Types } from "mongoose";
 import AppError from "../../errors/AppError";
 import { cacheService } from "../../services/cache.service";
+import { emailService } from "../../services/email.service";
 import QueryBuilder from "../../utils/queryBuilder";
 import { User } from "../user/user.model";
-import { emailService } from "../../services/email.service";
 import { IMember, ITeam } from "./team.interface";
 import { Team } from "./team.model";
 
