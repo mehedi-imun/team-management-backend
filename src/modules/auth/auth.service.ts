@@ -314,6 +314,52 @@ const setupOrganization = async (data: {
   };
 };
 
+// Change password (for logged-in users)
+const changePassword = async (
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<{ message: string }> => {
+  // Find user with password field
+  const user = await User.findById(userId).select("+password");
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  // Verify current password
+  const isPasswordValid = await (user as any).comparePassword(currentPassword);
+  if (!isPasswordValid) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Current password is incorrect");
+  }
+
+  // Update password
+  user.password = newPassword; // Will be hashed by pre-save hook
+  user.mustChangePassword = false; // Clear force change flag
+  await user.save();
+
+  return { message: "Password changed successfully" };
+};
+
+// Force change password (for first login with temp password)
+const forceChangePassword = async (
+  userId: string,
+  newPassword: string
+): Promise<{ message: string }> => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  // Update password
+  user.password = newPassword; // Will be hashed by pre-save hook
+  user.mustChangePassword = false; // Clear force change flag
+  await user.save();
+
+  return { message: "Password changed successfully. You can now use all features." };
+};
+
 export const AuthService = {
   login,
   refreshAccessToken,
@@ -322,4 +368,6 @@ export const AuthService = {
   logout,
   register,
   setupOrganization,
+  changePassword,
+  forceChangePassword,
 };

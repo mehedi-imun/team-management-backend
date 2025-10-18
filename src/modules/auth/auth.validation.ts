@@ -64,3 +64,33 @@ export const setupOrganizationSchema = z.object({
       .max(100, "Password too long"),
   }),
 });
+
+// Change password schema (regular)
+export const changePasswordSchema = z.object({
+  body: z.object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .max(100, "Password too long")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]/,
+        "Password must include uppercase, lowercase, number, and special character"
+      ),
+  }),
+});
+
+// Force change password schema (first login)
+export const forceChangePasswordSchema = z.object({
+  body: z.object({
+    newPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .max(100, "Password too long")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]/,
+        "Password must include uppercase, lowercase, number, and special character"
+      ),
+  }),
+});
+

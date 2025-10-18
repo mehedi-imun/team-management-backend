@@ -31,6 +31,7 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
       message: "Login successful",
       data: {
         user: result.user,
+        mustChangePassword: result.mustChangePassword, // Include at top level
       },
     });
   } catch (error) {
@@ -242,6 +243,56 @@ const setupOrganization = async (
   }
 };
 
+// Change password (regular)
+const changePassword = async (
+  req: any,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user._id;
+
+    const result = await AuthService.changePassword(
+      userId,
+      currentPassword,
+      newPassword
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: result.message,
+      data: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Force change password (first login)
+const forceChangePassword = async (
+  req: any,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { newPassword } = req.body;
+    const userId = req.user._id;
+
+    const result = await AuthService.forceChangePassword(userId, newPassword);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: result.message,
+      data: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const AuthController = {
   login,
   logout,
@@ -251,4 +302,6 @@ export const AuthController = {
   getMe,
   register,
   setupOrganization,
+  changePassword,
+  forceChangePassword,
 };

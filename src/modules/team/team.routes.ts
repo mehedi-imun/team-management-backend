@@ -1,6 +1,7 @@
 import express from "express";
 import { authenticate } from "../../middleware/authenticate";
 import { tenantContext } from "../../middleware/tenantContext";
+import { canCreateTeam as canCreateTeamMiddleware } from "../../middleware/trialAccess";
 import { checkTeamLimit } from "../../middleware/usageLimits";
 import { validateRequest } from "../../middleware/validateRequest";
 import { TeamController } from "./team.controller";
@@ -19,7 +20,8 @@ router.use(tenantContext);
 // CRUD
 router.post(
   "/",
-  checkTeamLimit, // Check if organization can add more teams
+  canCreateTeamMiddleware, // Check trial status first
+  checkTeamLimit, // Then check team limit
   validateRequest(createTeamSchema),
   TeamController.createTeam
 );

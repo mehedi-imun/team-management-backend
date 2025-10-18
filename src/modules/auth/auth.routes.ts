@@ -3,6 +3,8 @@ import { authenticate } from "../../middleware/authenticate";
 import { validateRequest } from "../../middleware/validateRequest";
 import { AuthController } from "./auth.controller";
 import {
+  changePasswordSchema,
+  forceChangePasswordSchema,
   forgotPasswordSchema,
   loginSchema,
   registerSchema,
@@ -39,5 +41,17 @@ router.post(
 
 // Protected routes
 router.get("/me", authenticate, AuthController.getMe);
+router.post(
+  "/change-password",
+  authenticate,
+  validateRequest(changePasswordSchema),
+  AuthController.changePassword
+);
+router.post(
+  "/force-change-password",
+  authenticate,
+  validateRequest(forceChangePasswordSchema),
+  AuthController.forceChangePassword
+);
 
 export const AuthRoutes = router;

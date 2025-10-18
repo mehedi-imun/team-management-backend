@@ -4,6 +4,7 @@ import {
   canInviteMembers,
   requiresOrganization,
 } from "../../middleware/permissions";
+import { canInviteMembers as canInviteMembersMiddleware } from "../../middleware/trialAccess";
 import { validateRequest } from "../../middleware/validateRequest";
 import { InvitationController } from "./invitation.controller";
 import {
@@ -33,7 +34,8 @@ router.use(requiresOrganization);
 
 router.post(
   "/",
-  canInviteMembers,
+  canInviteMembersMiddleware, // Check trial status first
+  canInviteMembers, // Then check permissions
   validateRequest(createInvitationSchema),
   InvitationController.createInvitation
 );
