@@ -180,6 +180,7 @@ class EmailService {
     to: string;
     subject: string;
     html: string;
+    text?: string; // Add text version support
     from?: string;
   }) {
     try {
@@ -191,6 +192,7 @@ class EmailService {
         to: options.to,
         subject: options.subject,
         html: options.html,
+        text: options.text, // Include text version
       });
       console.log(`✅ Email sent to ${options.to}: ${options.subject}`);
       return true;
@@ -208,5 +210,6 @@ export const sendEmail = (options: {
   to: string;
   subject: string;
   html: string;
+  text?: string; // Add text version support
   from?: string;
 }) => emailService.sendEmail(options);

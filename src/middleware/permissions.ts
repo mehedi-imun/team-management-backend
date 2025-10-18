@@ -125,11 +125,6 @@ export const canManageTeam = async (
     throw new AppError(403, "Cannot access teams from other organizations");
   }
 
-  // Check if user is the team manager
-  if (team.managerId === req.user._id?.toString()) {
-    return next();
-  }
-
   // Check if user is in managedTeamIds
   if (req.user.managedTeamIds && req.user.managedTeamIds.includes(teamId)) {
     return next();

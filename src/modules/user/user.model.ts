@@ -6,7 +6,12 @@ const userSchema = new Schema<IUser>(
   {
     organizationId: {
       type: String,
-      required: false, // Optional for Platform Admins (SuperAdmin/Admin)
+      required: false, // DEPRECATED: Kept for backward compatibility
+    },
+    organizationIds: {
+      type: [String],
+      default: [], // NEW: Support multiple organizations
+      index: true,
     },
     email: {
       type: String,
@@ -45,6 +50,19 @@ const userSchema = new Schema<IUser>(
       default: true,
     },
     lastLoginAt: {
+      type: Date,
+    },
+    firstLogin: {
+      type: Date,
+    },
+    mustChangePassword: {
+      type: Boolean,
+      default: false,
+    },
+    invitedBy: {
+      type: String, // User ID who invited this user
+    },
+    invitedAt: {
       type: Date,
     },
     passwordResetToken: {
@@ -104,8 +122,9 @@ userSchema.methods.comparePassword = async function (
 };
 
 // Add indexes
-userSchema.index({ organizationId: 1 });
-userSchema.index({ organizationId: 1, email: 1 });
-userSchema.index({ organizationId: 1, role: 1 });
+userSchema.index({ organizationId: 1 }); // DEPRECATED: Kept for backward compatibility
+userSchema.index({ organizationIds: 1 }); // NEW: Multi-organization index
+userSchema.index({ email: 1, organizationIds: 1 }); // Compound index
+userSchema.index({ role: 1, organizationIds: 1 }); // Role-based queries
 
 export const User = model<IUser>("User", userSchema);

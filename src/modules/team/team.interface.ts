@@ -16,9 +16,6 @@ export interface ITeam {
   organizationId: string; // Which organization owns this team
   name: string;
   description: string;
-  managerId?: string; // Manager who oversees this team
-  managerApproved: "0" | "1" | "-1";
-  directorApproved: "0" | "1" | "-1";
   order?: number;
   members: IMember[];
   isActive: boolean;

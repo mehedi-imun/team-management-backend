@@ -60,6 +60,12 @@ export interface IOrganization {
   isActive: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+
+  // Virtual fields (computed properties)
+  isOnTrial?: boolean; // Whether organization is currently on trial
+  daysLeftInTrial?: number; // Days remaining in trial period
+  usersPercentage?: number; // Percentage of user limit used
+  teamsPercentage?: number; // Percentage of team limit used
 }
 
 export interface IOrganizationCreate {

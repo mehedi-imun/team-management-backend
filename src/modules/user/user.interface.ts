@@ -1,6 +1,7 @@
 export interface IUser {
   _id?: string;
-  organizationId?: string; // Optional for Platform Admins (SuperAdmin/Admin)
+  organizationId?: string; // DEPRECATED: Use organizationIds instead. Kept for backward compatibility
+  organizationIds?: string[]; // NEW: Support multiple organizations per user
   email: string;
   password: string;
   name: string;
@@ -15,6 +16,12 @@ export interface IUser {
   // Status
   isActive: boolean;
   status?: "active" | "suspended" | "inactive"; // Virtual field based on isActive
+
+  // First Login & Password Management
+  mustChangePassword?: boolean; // Force password change on first login
+  firstLogin?: Date; // Track first login timestamp
+  invitedBy?: string; // User ID who invited this user
+  invitedAt?: Date; // When they were invited
 
   // Password Reset
   passwordResetToken?: string;

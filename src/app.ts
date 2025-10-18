@@ -14,6 +14,7 @@ import { InvitationRoutes } from "./modules/invitation/invitation.routes";
 import { NotificationRoutes } from "./modules/notification/notification.routes";
 import OrganizationRoutes from "./modules/organization/organization.routes";
 import { TeamRoutes } from "./modules/team/team.routes";
+import { TrialRoutes } from "./modules/trial/trial.routes";
 import { UserRoutes } from "./modules/user/user.routes";
 
 const app = express();
@@ -55,6 +56,7 @@ app.use("/api/v1/analytics", AnalyticsRoutes);
 app.use("/api/v1/notifications", NotificationRoutes);
 app.use("/api/v1/organizations", OrganizationRoutes);
 app.use("/api/v1/invitations", InvitationRoutes);
+app.use("/api/v1/trial", TrialRoutes);
 
 // Default route for testing
 app.get("/", (_req, res) => {

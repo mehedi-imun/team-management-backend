@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import app from "./app";
 import env from "./config/env";
 import { connectRedis, disconnectRedis } from "./config/redis";
+import { initializeCronJobs } from "./services/cron.service";
 
 let server: Server | null = null;
 
@@ -21,6 +22,9 @@ async function startServer() {
         redisError
       );
     }
+
+    // Initialize cron jobs for trial expiry checks
+    initializeCronJobs();
 
     // Start HTTP server
     server = app.listen(env.PORT, () => {

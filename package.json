@@ -10,13 +10,16 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "db:reset": "ts-node src/scripts/resetDatabase.ts",
     "seed:admin": "ts-node src/scripts/seedAdmin.ts",
+    "db:fresh": "npm run db:reset && npm run seed:admin",
     "migrate:roles": "ts-node src/scripts/migrate-roles.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/node-cron": "^3.0.11",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -29,6 +32,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.1",
     "nanoid": "^5.1.6",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.9",
     "stripe": "^19.1.0",
     "zod": "^4.1.12"

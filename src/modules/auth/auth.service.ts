@@ -47,6 +47,16 @@ const login = async (
   const accessToken = generateAccessToken(tokenPayload);
   const refreshToken = generateRefreshToken(tokenPayload);
 
+  // Update last login timestamp
+  user.lastLoginAt = new Date();
+  
+  // If this is first login, record it
+  if (!user.firstLogin) {
+    user.firstLogin = new Date();
+  }
+  
+  await user.save();
+
   // Return user data and tokens (password excluded by toJSON transform)
   const userResponse: any = user.toJSON();
 
@@ -58,9 +68,12 @@ const login = async (
       role: userResponse.role,
       isActive: userResponse.isActive,
       organizationId: userResponse.organizationId,
+      organizationIds: userResponse.organizationIds,
+      mustChangePassword: user.mustChangePassword || false, // Include password change flag
     },
     accessToken,
     refreshToken,
+    mustChangePassword: user.mustChangePassword || false, // Top-level flag for easy access
   };
 };
 

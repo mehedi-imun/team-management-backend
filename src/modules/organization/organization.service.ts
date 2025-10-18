@@ -333,7 +333,11 @@ class OrganizationService {
     plan?: "free" | "professional" | "business" | "enterprise";
   }): Promise<IOrganization> {
     const crypto = await import("crypto");
-    const { emailService } = await import("../../services/email.service");
+    const bcrypt = await import("bcryptjs");
+    const { sendEmail } = await import("../../services/email.service");
+    const { getOrgOwnerCreatedEmailTemplate } = await import(
+      "../../templates/org-owner-created.template"
+    );
 
     // Check if slug already exists
     const existingSlug = await Organization.findOne({ slug: data.slug });
@@ -341,14 +345,43 @@ class OrganizationService {
       throw new AppError(409, "Organization slug already exists");
     }
 
-    // Generate setup token
-    const setupToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(setupToken)
-      .digest("hex");
+    // Generate temporary password for owner
+    const generateTempPassword = (): string => {
+      const length = 12;
+      const charset =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+      let password = "";
 
-    // Create organization in pending_setup status
+      // Ensure at least one of each required type
+      password +=
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)];
+      password +=
+        "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)];
+      password += "0123456789"[Math.floor(Math.random() * 10)];
+      password += "!@#$%^&*"[Math.floor(Math.random() * 8)];
+
+      // Fill the rest randomly
+      for (let i = password.length; i < length; i++) {
+        password += charset[Math.floor(Math.random() * charset.length)];
+      }
+
+      // Shuffle the password
+      return password.split("").sort(() => Math.random() - 0.5).join("");
+    };
+
+    const temporaryPassword = generateTempPassword();
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: data.ownerEmail });
+    if (existingUser) {
+      throw new AppError(
+        409,
+        "User with this email already exists. Please use a different email or assign an existing user as owner."
+      );
+    }
+
+    // Create organization with active subscription (no trial for admin-created orgs)
     const organization = await Organization.create({
       name: data.name,
       slug: data.slug,
@@ -356,23 +389,51 @@ class OrganizationService {
       ownerName: data.ownerName,
       plan: data.plan || "professional", // Admin-created orgs default to professional
       subscriptionStatus: "active", // No trial for admin-created orgs
-      status: "pending_setup",
-      setupToken: hashedToken,
-      setupTokenExpires: new Date(Date.now() + 48 * 60 * 60 * 1000), // 48 hours
+      billingCycle: "monthly",
+      status: "active", // Active immediately (not pending_setup)
       usage: {
-        users: 0, // Will increment when owner sets up
+        users: 1, // Will include owner
         teams: 0,
         storage: "0MB",
       },
+      isActive: true,
     });
 
-    // Send setup email to designated owner
-    await emailService.sendOrganizationSetupEmail(
-      data.ownerEmail,
-      setupToken, // Send unhashed token
-      data.name,
-      data.ownerName
-    );
+    // Create owner user account
+    const ownerUser = await User.create({
+      name: data.ownerName,
+      email: data.ownerEmail,
+      password: hashedPassword,
+      role: "OrgOwner",
+      organizationIds: [organization._id!.toString()],
+      isActive: true,
+      mustChangePassword: true, // Force password change on first login
+    });
+
+    // Update organization with owner ID
+    organization.ownerId = ownerUser._id!.toString();
+    await organization.save();
+
+    // Send email with credentials using new template
+    const loginUrl = `${process.env.FRONTEND_URL}/login`;
+    const trialDays = 0; // No trial for admin-created orgs
+
+    const emailTemplate = getOrgOwnerCreatedEmailTemplate({
+      ownerName: data.ownerName,
+      organizationName: data.name,
+      email: data.ownerEmail,
+      temporaryPassword,
+      loginUrl,
+      trialDays,
+      createdBy: "Platform Administrator",
+    });
+
+    await sendEmail({
+      to: data.ownerEmail,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
+      text: emailTemplate.text,
+    });
 
     return organization;
   }

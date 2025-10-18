@@ -72,25 +72,13 @@ const getTeamDistribution = async (): Promise<ITeamDistribution[]> => {
     return cached;
   }
 
-  const teams = await Team.find().select(
-    "name members managerApproved directorApproved"
-  );
+  const teams = await Team.find().select("name members isActive");
 
   const distribution = teams.map((team) => {
-    let status = "Pending";
-    if (team.managerApproved === "1" && team.directorApproved === "1") {
-      status = "Approved";
-    } else if (
-      team.managerApproved === "-1" ||
-      team.directorApproved === "-1"
-    ) {
-      status = "Rejected";
-    }
-
     return {
       name: team.name,
       memberCount: team.members?.length || 0,
-      status,
+      status: team.isActive ? "Active" : "Inactive",
     };
   });
 
@@ -101,42 +89,13 @@ const getTeamDistribution = async (): Promise<ITeamDistribution[]> => {
 };
 
 const getApprovalRates = async (): Promise<IApprovalRate> => {
-  // Try cache
-  const cached = await cacheService.get<IApprovalRate>(
-    "analytics:approvalRates"
-  );
-  if (cached) {
-    console.log("✅ Cache hit for approval rates");
-    return cached;
-  }
-
-  const totalTeams = await Team.countDocuments();
-
-  if (totalTeams === 0) {
-    return {
-      managerApprovalRate: 0,
-      directorApprovalRate: 0,
-      overallApprovalRate: 0,
-    };
-  }
-
-  const managerApproved = await Team.countDocuments({ managerApproved: "1" });
-  const directorApproved = await Team.countDocuments({ directorApproved: "1" });
-  const fullyApproved = await Team.countDocuments({
-    managerApproved: "1",
-    directorApproved: "1",
-  });
-
-  const rates = {
-    managerApprovalRate: (managerApproved / totalTeams) * 100,
-    directorApprovalRate: (directorApproved / totalTeams) * 100,
-    overallApprovalRate: (fullyApproved / totalTeams) * 100,
+  // DEPRECATED: Approval system removed
+  // Return zero values for backward compatibility
+  return {
+    managerApprovalRate: 0,
+    directorApprovalRate: 0,
+    overallApprovalRate: 0,
   };
-
-  // Cache for 5 minutes
-  await cacheService.set("analytics:approvalRates", rates, 300);
-
-  return rates;
 };
 
 // Platform Analytics for SuperAdmin/Admin
