@@ -46,6 +46,8 @@ const createTeam = async (
 
   // Process members if provided
   if (data.members && Array.isArray(data.members)) {
+    const crypto = require("crypto");
+    
     for (const memberData of data.members) {
       if (!memberData.email || !memberData.email.trim()) {
         continue; // Skip empty emails
@@ -54,25 +56,43 @@ const createTeam = async (
       let user = await User.findOne({ email: memberData.email });
 
       if (!user) {
-        // Create new user if doesn't exist
-        if (!memberData.password) {
-          throw new AppError(
-            httpStatus.BAD_REQUEST,
-            `Password is required for new member ${memberData.email}`
-          );
-        }
+        // Create new user with setup token for invitation flow
+        const setupToken = crypto.randomBytes(32).toString("hex");
+        const verificationToken = crypto.randomBytes(32).toString("hex");
+        const tokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
         user = await User.create({
           email: memberData.email,
           name: memberData.name || memberData.email.split("@")[0],
-          password: memberData.password,
+          password: memberData.password || crypto.randomBytes(16).toString("hex"), // Temporary password
           role: "OrgMember",
           organizationId: organizationId,
-          mustChangePassword: true, // Force password change on first login
+          status: "pending",
+          emailVerified: false,
+          emailVerificationToken: verificationToken,
+          emailVerificationExpires: tokenExpires,
+          setupToken: setupToken,
+          setupTokenExpires: tokenExpires,
+          mustChangePassword: true, // Force password setup
+          isActive: false,
         });
 
-        // Send welcome email
-        await emailService.sendWelcomeEmail(user.email, user.name, user.role);
+        // Get organization for email
+        const Organization = require("../organization/organization.model").Organization;
+        const organization = await Organization.findById(organizationId);
+        const organizationName = organization?.name || "Your Organization";
+
+        // Send team member invitation email with setup link
+        await emailService.sendTeamMemberInvitation(
+          user.email,
+          user.name,
+          data.name, // Team name
+          organizationName,
+          "Team Admin", // Default inviter name
+          setupToken
+        );
+
+        console.log(`✅ Team member invitation sent to ${user.email} with setup token`);
       }
 
       // Add member to team
@@ -328,7 +348,8 @@ const addMember = async (
     name?: string;
     role?: "TeamLead" | "Member";
     password?: string;
-  }
+  },
+  inviterUser?: { name: string; email: string }
 ) => {
   if (!Types.ObjectId.isValid(teamId))
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
@@ -339,6 +360,14 @@ const addMember = async (
     throw new AppError(httpStatus.NOT_FOUND, "Team not found");
   }
 
+  // Get organization details for email
+  const Organization =
+    require("../organization/organization.model").Organization;
+  const organization = await Organization.findById(organizationId);
+  if (!organization) {
+    throw new AppError(httpStatus.NOT_FOUND, "Organization not found");
+  }
+
   // Check if member already exists in team
   const memberExists = team.members.some((m) => m.email === memberData.email);
   if (memberExists) {
@@ -346,34 +375,76 @@ const addMember = async (
   }
 
   let userId: string | undefined;
+  let isNewUser = false;
 
   // Check if user exists in database
   let user = await User.findOne({ email: memberData.email });
 
   if (!user) {
-    // Create new user if doesn't exist
-    if (!memberData.password) {
-      throw new AppError(
-        httpStatus.BAD_REQUEST,
-        "Password is required for new members"
-      );
-    }
+    // Create new user with pending status
+    const crypto = require("crypto");
+    const setupToken = crypto.randomBytes(32).toString("hex");
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const tokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
     user = await User.create({
       email: memberData.email,
       name: memberData.name || memberData.email.split("@")[0],
-      password: memberData.password,
+      password: memberData.password || crypto.randomBytes(16).toString("hex"), // Temporary password
       role: "OrgMember", // Default role for team members
       organizationId: organizationId,
-      mustChangePassword: true, // Force password change on first login
+      status: "pending", // Pending until they set up account
+      emailVerified: false,
+      emailVerificationToken: verificationToken,
+      emailVerificationExpires: tokenExpires,
+      setupToken: setupToken,
+      setupTokenExpires: tokenExpires,
+      mustChangePassword: true, // Force password setup
+      isActive: false,
     });
 
     userId = user._id.toString();
+    isNewUser = true;
 
-    // Send welcome email
-    await emailService.sendWelcomeEmail(user.email, user.name, user.role);
+    // Send team member invitation email with setup link
+    const inviterName =
+      inviterUser?.name || organization.ownerName || "Your team admin";
+    await emailService.sendTeamMemberInvitation(
+      user.email,
+      user.name,
+      team.name,
+      organization.name,
+      inviterName,
+      setupToken
+    );
+
+    console.log(
+      `✅ Team member invitation sent to ${user.email} with setup token`
+    );
   } else {
     userId = user._id.toString();
+
+    // If user exists but not verified, resend verification
+    if (!user.emailVerified && user.status === "pending") {
+      const crypto = require("crypto");
+      const verificationToken = crypto.randomBytes(32).toString("hex");
+      const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      user.emailVerificationToken = verificationToken;
+      user.emailVerificationExpires = tokenExpires;
+      await user.save();
+
+      const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+      await emailService.sendEmailVerification(
+        user.email,
+        user.name,
+        verificationUrl
+      );
+
+      console.log(
+        `✅ Verification email resent to existing unverified user ${user.email}`
+      );
+    }
   }
 
   // Add member to team
@@ -382,9 +453,9 @@ const addMember = async (
     email: memberData.email,
     name: memberData.name || user.name || "",
     role: memberData.role || "Member",
-    status: "pending", // Default to pending until invitation accepted
+    status: "pending", // Pending until they complete setup
     invitedAt: new Date(),
-    isActive: false, // Deprecated field, keeping for backward compatibility
+    isActive: false,
   };
 
   const result = await Team.findOneAndUpdate(
@@ -393,16 +464,22 @@ const addMember = async (
     { new: true }
   );
 
-  // Send invitation notification
-  console.log(
-    `📧 Team invitation should be sent to ${memberData.email} for team "${team.name}"`
-  );
-
   // Invalidate cache
   await cacheService.delete(`team:${organizationId}:${teamId}`);
   await cacheService.invalidatePattern(`teams:${organizationId}:*`);
 
-  return result;
+  return {
+    team: result,
+    newUser: isNewUser,
+    userStatus: user.status,
+    message: isNewUser
+      ? `Invitation sent to ${memberData.email}. They will receive an email to set up their account.`
+      : `Member added to team. ${
+          user.emailVerified
+            ? "User can now access the team."
+            : "Verification email sent."
+        }`,
+  };
 };
 
 // Assign manager to team

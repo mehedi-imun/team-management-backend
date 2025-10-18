@@ -10,6 +10,7 @@ import {
   registerSchema,
   resendVerificationEmailSchema,
   resetPasswordSchema,
+  setupAccountSchema,
   setupOrganizationSchema,
 } from "./auth.validation";
 
@@ -45,6 +46,12 @@ router.post(
   validateRequest(resendVerificationEmailSchema),
   AuthController.resendVerificationEmail
 );
+router.post(
+  "/setup-account",
+  validateRequest(setupAccountSchema),
+  AuthController.setupAccount
+);
+router.get("/validate-setup-token", AuthController.validateSetupToken);
 
 // Protected routes
 router.get("/me", authenticate, AuthController.getMe);

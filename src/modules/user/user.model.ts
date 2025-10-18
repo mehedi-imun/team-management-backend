@@ -90,6 +90,14 @@ const userSchema = new Schema<IUser>(
       type: Date,
       select: false,
     },
+    setupToken: {
+      type: String,
+      select: false,
+    },
+    setupTokenExpires: {
+      type: Date,
+      select: false,
+    },
   },
   {
     timestamps: true,

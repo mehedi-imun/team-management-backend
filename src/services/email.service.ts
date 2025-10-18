@@ -207,6 +207,109 @@ If you didn't create an account, please ignore this email.
     }
   }
 
+  async sendTeamMemberInvitation(
+    to: string,
+    userName: string,
+    teamName: string,
+    organizationName: string,
+    inviterName: string,
+    setupToken: string
+  ) {
+    const setupUrl = `${envConfig.FRONTEND_URL}/setup-account?token=${setupToken}`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <body style="font-family: Arial, sans-serif; padding: 20px; background-color: #f7f7f7;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #4F46E5; margin: 0;">You've Been Added to a Team!</h1>
+          </div>
+          <p style="font-size: 16px; color: #333;">Hello ${userName},</p>
+          <p style="font-size: 16px; color: #333;">${inviterName} has added you to the team <strong>"${teamName}"</strong> in <strong>${organizationName}</strong>.</p>
+          
+          <div style="background: #f0f4ff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin: 0 0 10px 0; color: #4F46E5;">What's next?</h3>
+            <ol style="margin: 0; padding-left: 20px; color: #555;">
+              <li>Click the button below to set up your account</li>
+              <li>Create a secure password</li>
+              <li>Verify your email address</li>
+              <li>Access your team dashboard</li>
+            </ol>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${setupUrl}" style="display: inline-block; padding: 15px 40px; background: #4F46E5; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">Set Up Your Account</a>
+          </div>
+
+          <p style="font-size: 14px; color: #666;"><strong>This link will expire in 7 days.</strong></p>
+          <p style="font-size: 14px; color: #666;">If you didn't expect this invitation or have any questions, please contact ${inviterName} or your organization administrator.</p>
+
+          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+          <p style="font-size: 12px; color: #999; text-align: center;">Team Management System - Secure Organization Management</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const text = `
+Hello ${userName},
+
+${inviterName} has added you to the team "${teamName}" in ${organizationName}.
+
+What's next?
+1. Click the link below to set up your account
+2. Create a secure password
+3. Verify your email address
+4. Access your team dashboard
+
+Setup Link: ${setupUrl}
+
+This link will expire in 7 days.
+
+If you didn't expect this invitation or have any questions, please contact ${inviterName} or your organization administrator.
+    `;
+
+    try {
+      console.log(`📤 Attempting to send team invitation to: ${to}`);
+      const transporter = await this.getTransporter();
+      if (!transporter) {
+        console.error("❌ Failed to get transporter!");
+        return false;
+      }
+
+      const mailOptions = {
+        from: `"Team Management" <${envConfig.EMAIL_FROM}>`,
+        to,
+        subject: `You've been added to ${teamName} - ${organizationName}`,
+        html,
+        text,
+      };
+
+      console.log(`📧 Sending email with options:`, {
+        from: mailOptions.from,
+        to: mailOptions.to,
+        subject: mailOptions.subject,
+      });
+
+      const info = await transporter.sendMail(mailOptions);
+      
+      console.log(`✅ Team member invitation sent successfully!`);
+      console.log(`   To: ${to}`);
+      console.log(`   Message ID: ${info.messageId}`);
+      console.log(`   Response: ${info.response}`);
+      
+      return true;
+    } catch (error: any) {
+      console.error("❌ Team member invitation error:");
+      console.error(`   To: ${to}`);
+      console.error(`   Error message: ${error.message}`);
+      console.error(`   Error code: ${error.code}`);
+      console.error(`   Full error:`, error);
+      return false;
+    }
+  }
+
   async sendOrganizationSetupEmail(
     to: string,
     token: string,

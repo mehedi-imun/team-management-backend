@@ -522,6 +522,94 @@ const resendVerificationEmail = async (email: string) => {
   };
 };
 
+// Setup account for invited team member
+const setupAccount = async (data: { token: string; password: string }) => {
+  const { token, password } = data;
+
+  // Find user by setup token
+  const user = await User.findOne({
+    setupToken: token,
+    setupTokenExpires: { $gt: new Date() },
+  }).select("+setupToken +setupTokenExpires");
+
+  if (!user) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Invalid or expired setup link. Please contact your administrator for a new invitation."
+    );
+  }
+
+  // Update user with new password
+  user.password = password;
+  user.mustChangePassword = false;
+  user.emailVerified = true; // Auto-verify email
+  user.status = "active";
+  user.isActive = true;
+
+  // Clear setup token
+  user.setupToken = undefined;
+  user.setupTokenExpires = undefined;
+
+  // Clear email verification token (no longer needed)
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpires = undefined;
+
+  await user.save();
+
+  // Generate tokens for auto-login
+  const tokenPayload = {
+    userId: user._id!.toString(),
+    email: user.email,
+    role: user.role,
+  };
+
+  const accessToken = generateAccessToken(tokenPayload);
+  const refreshToken = generateRefreshToken(tokenPayload);
+
+  // Return user data and tokens
+  const userResponse: any = user.toJSON();
+
+  return {
+    user: {
+      _id: userResponse._id,
+      email: userResponse.email,
+      name: userResponse.name,
+      role: userResponse.role,
+      isActive: userResponse.isActive,
+      organizationId: userResponse.organizationId,
+      organizationIds: userResponse.organizationIds,
+    },
+    accessToken,
+    refreshToken,
+    message: "Account setup successful! Welcome to the team.",
+  };
+};
+
+// Validate setup token
+const validateSetupToken = async (token: string) => {
+  // Find user by setup token
+  const user = await User.findOne({
+    setupToken: token,
+    setupTokenExpires: { $gt: new Date() },
+  })
+    .select("+setupToken +setupTokenExpires")
+    .populate("organizationId", "name");
+
+  if (!user) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Invalid or expired setup link. Please contact your administrator for a new invitation."
+    );
+  }
+
+  // Return user basic info
+  return {
+    email: user.email,
+    name: user.name,
+    organizationName: (user.organizationId as any)?.name || "Your Organization",
+  };
+};
+
 export const AuthService = {
   login,
   refreshAccessToken,
@@ -534,4 +622,6 @@ export const AuthService = {
   forceChangePassword,
   verifyEmail,
   resendVerificationEmail,
+  setupAccount,
+  validateSetupToken,
 };

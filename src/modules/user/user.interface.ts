@@ -32,6 +32,10 @@ export interface IUser {
   passwordResetToken?: string;
   passwordResetExpires?: Date;
 
+  // Account Setup (for invited users)
+  setupToken?: string;
+  setupTokenExpires?: Date;
+
   // Timestamps
   createdAt?: Date;
   updatedAt?: Date;

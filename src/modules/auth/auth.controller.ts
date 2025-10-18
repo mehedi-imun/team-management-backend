@@ -364,6 +364,76 @@ const resendVerificationEmail = async (
   }
 };
 
+// Setup account for invited team member
+const setupAccount = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { token, password } = req.body;
+
+    const result = await AuthService.setupAccount({ token, password });
+
+    // Set HTTP-only cookies for auto-login
+    res.cookie("accessToken", result.accessToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: result.message,
+      data: {
+        user: result.user,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Validate setup token
+const validateSetupToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { token } = req.query;
+
+    if (!token || typeof token !== "string") {
+      return sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "Setup token is required",
+        data: null,
+      });
+    }
+
+    const result = await AuthService.validateSetupToken(token);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Token is valid",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const AuthController = {
   login,
   logout,
@@ -377,4 +447,6 @@ export const AuthController = {
   forceChangePassword,
   verifyEmail,
   resendVerificationEmail,
+  setupAccount,
+  validateSetupToken,
 };

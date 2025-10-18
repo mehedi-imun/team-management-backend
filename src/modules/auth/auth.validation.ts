@@ -100,3 +100,14 @@ export const resendVerificationEmailSchema = z.object({
     email: z.string().email("Invalid email format"),
   }),
 });
+
+// Setup account schema (for invited team members)
+export const setupAccountSchema = z.object({
+  body: z.object({
+    token: z.string().min(1, "Setup token is required"),
+    password: z
+      .string()
+      .min(6, "Password must be at least 6 characters")
+      .max(100, "Password too long"),
+  }),
+});
