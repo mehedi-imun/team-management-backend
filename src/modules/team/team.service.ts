@@ -47,7 +47,7 @@ const createTeam = async (
   // Process members if provided
   if (data.members && Array.isArray(data.members)) {
     const crypto = require("crypto");
-    
+
     for (const memberData of data.members) {
       if (!memberData.email || !memberData.email.trim()) {
         continue; // Skip empty emails
@@ -64,7 +64,8 @@ const createTeam = async (
         user = await User.create({
           email: memberData.email,
           name: memberData.name || memberData.email.split("@")[0],
-          password: memberData.password || crypto.randomBytes(16).toString("hex"), // Temporary password
+          password:
+            memberData.password || crypto.randomBytes(16).toString("hex"), // Temporary password
           role: "OrgMember",
           organizationId: organizationId,
           status: "pending",
@@ -78,7 +79,8 @@ const createTeam = async (
         });
 
         // Get organization for email
-        const Organization = require("../organization/organization.model").Organization;
+        const Organization =
+          require("../organization/organization.model").Organization;
         const organization = await Organization.findById(organizationId);
         const organizationName = organization?.name || "Your Organization";
 
@@ -92,7 +94,9 @@ const createTeam = async (
           setupToken
         );
 
-        console.log(`✅ Team member invitation sent to ${user.email} with setup token`);
+        console.log(
+          `✅ Team member invitation sent to ${user.email} with setup token`
+        );
       }
 
       // Add member to team

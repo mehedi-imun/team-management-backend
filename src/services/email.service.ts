@@ -293,12 +293,12 @@ If you didn't expect this invitation or have any questions, please contact ${inv
       });
 
       const info = await transporter.sendMail(mailOptions);
-      
+
       console.log(`✅ Team member invitation sent successfully!`);
       console.log(`   To: ${to}`);
       console.log(`   Message ID: ${info.messageId}`);
       console.log(`   Response: ${info.response}`);
-      
+
       return true;
     } catch (error: any) {
       console.error("❌ Team member invitation error:");
