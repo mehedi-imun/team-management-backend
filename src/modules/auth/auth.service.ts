@@ -196,7 +196,9 @@ const register = async (data: {
       await existingUser.save();
 
       // Get the organization
-      const organization = await Organization.findById(existingUser.organizationId);
+      const organization = await Organization.findById(
+        existingUser.organizationId
+      );
       if (organization) {
         // Update organization details if changed
         organization.name = data.organizationName;
@@ -215,7 +217,8 @@ const register = async (data: {
       return {
         user: {
           ...existingUser.toObject(),
-          message: "Verification email resent. Please check your email to verify your account",
+          message:
+            "Verification email resent. Please check your email to verify your account",
         },
         organization,
         accessToken: null,
@@ -282,7 +285,7 @@ const register = async (data: {
 
   // Send email verification link
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
-  
+
   await emailService.sendEmailVerification(
     owner.email,
     owner.name,
@@ -438,7 +441,10 @@ const verifyEmail = async (token: string) => {
   });
 
   if (!user) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Invalid or expired verification token");
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Invalid or expired verification token"
+    );
   }
 
   // Update user
@@ -479,12 +485,18 @@ const resendVerificationEmail = async (email: string) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, "User not found with this email address");
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      "User not found with this email address"
+    );
   }
 
   // Check if already verified
   if (user.emailVerified) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Email is already verified. You can login now.");
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Email is already verified. You can login now."
+    );
   }
 
   // Generate new verification token

@@ -723,7 +723,7 @@ class OrganizationService {
       // Create new user
       const password = memberData.password || nanoid(12);
       const role = memberData.role || "OrgMember";
-      
+
       user = await User.create({
         email: memberData.email,
         name: memberData.name,
@@ -731,7 +731,8 @@ class OrganizationService {
         role,
         organizationId,
         // OrgOwner and OrgAdmin are active immediately, OrgMember is pending
-        status: role === "OrgOwner" || role === "OrgAdmin" ? "active" : "pending",
+        status:
+          role === "OrgOwner" || role === "OrgAdmin" ? "active" : "pending",
         mustChangePassword: true, // All new members must change password
       });
     }

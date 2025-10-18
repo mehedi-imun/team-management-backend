@@ -8,16 +8,18 @@ class EmailService {
     if (!this.transporter) {
       // Use secure: true for port 465, false for port 587
       const isSecurePort = envConfig.SMTP_PORT === 465;
-      
+
       // Debug: Log email configuration (without exposing password)
       console.log("📧 Email Configuration:");
       console.log(`  Host: ${envConfig.SMTP_HOST}`);
       console.log(`  Port: ${envConfig.SMTP_PORT}`);
       console.log(`  Secure: ${isSecurePort}`);
       console.log(`  User: ${envConfig.SMTP_USER}`);
-      console.log(`  Password configured: ${envConfig.SMTP_PASSWORD ? 'Yes' : 'No'}`);
+      console.log(
+        `  Password configured: ${envConfig.SMTP_PASSWORD ? "Yes" : "No"}`
+      );
       console.log(`  From: ${envConfig.EMAIL_FROM}`);
-      
+
       this.transporter = nodemailer.createTransport({
         host: envConfig.SMTP_HOST,
         port: envConfig.SMTP_PORT,
