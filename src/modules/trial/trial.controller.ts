@@ -2,9 +2,9 @@
 import { Response } from "express";
 import httpStatus from "http-status";
 import { AuthRequest } from "../../middleware/authenticate";
+import { TrialService } from "../../services/trial.service";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
-import { TrialService } from "../../services/trial.service";
 
 /**
  * Get trial status for current organization

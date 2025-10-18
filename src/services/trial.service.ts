@@ -2,12 +2,12 @@
 // Handles trial expiry checks, warnings, and feature blocking
 
 import { Organization } from "../modules/organization/organization.model";
-import { sendEmail } from "./email.service";
-import {
-  getTrialExpiryWarningTemplate,
-  getTrialExpiredTemplate,
-} from "../templates/trial-expiry.template";
 import { User } from "../modules/user/user.model";
+import {
+  getTrialExpiredTemplate,
+  getTrialExpiryWarningTemplate,
+} from "../templates/trial-expiry.template";
+import { sendEmail } from "./email.service";
 
 /**
  * Check all organizations for trial expiry and send warnings
@@ -35,7 +35,9 @@ export const checkTrialExpiry = async (): Promise<void> => {
     );
 
     console.log(
-      `  - ${org.name}: ${daysLeft} days left (ends: ${org.trialEndsAt.toISOString()})`
+      `  - ${
+        org.name
+      }: ${daysLeft} days left (ends: ${org.trialEndsAt.toISOString()})`
     );
 
     // Trial expired - block features
@@ -99,7 +101,10 @@ const sendTrialExpiryWarning = async (
       `  ✅ Sent ${daysRemaining}-day warning to ${owner.email} (${org.name})`
     );
   } catch (error) {
-    console.error(`  ❌ Error sending warning for org ${organizationId}:`, error);
+    console.error(
+      `  ❌ Error sending warning for org ${organizationId}:`,
+      error
+    );
   }
 };
 
@@ -156,12 +161,17 @@ const handleTrialExpired = async (organizationId: string): Promise<void> => {
       text: emailTemplate.text,
     });
 
-    console.log(`  ✅ Sent expiry notification to ${owner.email} (${org.name})`);
+    console.log(
+      `  ✅ Sent expiry notification to ${owner.email} (${org.name})`
+    );
 
     // TODO: Emit Socket.io event for real-time notification
     // socketService.emitToOrganization(organizationId, 'trial:expired', { ... });
   } catch (error) {
-    console.error(`  ❌ Error handling expired trial for org ${organizationId}:`, error);
+    console.error(
+      `  ❌ Error handling expired trial for org ${organizationId}:`,
+      error
+    );
   }
 };
 
@@ -194,7 +204,9 @@ export const canAccessFeatures = async (
 /**
  * Check if organization can create teams
  */
-export const canCreateTeam = async (organizationId: string): Promise<boolean> => {
+export const canCreateTeam = async (
+  organizationId: string
+): Promise<boolean> => {
   const hasAccess = await canAccessFeatures(organizationId);
   if (!hasAccess) return false;
 
@@ -233,7 +245,9 @@ export const getTrialStatus = async (organizationId: string) => {
   const daysLeft = org.trialEndsAt
     ? Math.max(
         0,
-        Math.ceil((org.trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        Math.ceil(
+          (org.trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        )
       )
     : 0;
 

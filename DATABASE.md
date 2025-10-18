@@ -18,12 +18,14 @@ npm run db:fresh
 ### Default Users After Reset
 
 #### 1. SuperAdmin (Platform Owner)
+
 - **Email:** `superadmin@teammanagement.com`
 - **Password:** `superadmin123`
 - **Role:** `SuperAdmin`
 - **Access:** Complete system access
 
 #### 2. Platform Admin
+
 - **Email:** `admin@teammanagement.com`
 - **Password:** `admin123`
 - **Role:** `Admin`
@@ -36,6 +38,7 @@ npm run db:fresh
 ⚠️ **IMPORTANT:** Change default passwords immediately after first login!
 
 ### Password Requirements
+
 - Minimum 6 characters (increase to 8+ in production)
 - Use strong passwords in production environment
 - Enable 2FA for SuperAdmin accounts
@@ -45,6 +48,7 @@ npm run db:fresh
 ## 📊 Database Structure
 
 ### Collections Created
+
 - `users` - All system users (SuperAdmin, Admin, OrgOwner, OrgAdmin, OrgMember)
 - `organizations` - Organization details and settings
 - `teams` - Team management within organizations
@@ -65,21 +69,25 @@ npm run migrate:roles
 ## 🛠️ Manual Database Operations
 
 ### Connect to MongoDB Shell
+
 ```bash
 docker exec -it team-mgmt-mongodb mongosh
 ```
 
 ### View All Databases
+
 ```bash
 docker exec team-mgmt-mongodb mongosh --eval "show dbs"
 ```
 
 ### Check User Count
+
 ```bash
 docker exec team-mgmt-mongodb mongosh team_management --eval "db.users.countDocuments()"
 ```
 
 ### View All Users
+
 ```bash
 docker exec team-mgmt-mongodb mongosh team_management --eval "db.users.find().pretty()"
 ```
@@ -89,6 +97,7 @@ docker exec team-mgmt-mongodb mongosh team_management --eval "db.users.find().pr
 ## 📝 Development Workflow
 
 ### Fresh Start
+
 ```bash
 # 1. Reset database
 npm run db:reset
@@ -101,6 +110,7 @@ npm run dev
 ```
 
 ### Or use the combined command
+
 ```bash
 npm run db:fresh && npm run dev
 ```
@@ -110,13 +120,16 @@ npm run db:fresh && npm run dev
 ## 🐛 Troubleshooting
 
 ### "SuperAdmin already exists" error
+
 Run `npm run db:reset` first, then `npm run seed:admin`
 
 ### MongoDB connection error
+
 1. Check if Docker containers are running: `docker ps`
 2. Restart containers: `docker-compose restart`
 
 ### Authentication error in MongoDB
+
 The scripts use the connection string from `.env` file which includes credentials.
 
 ---

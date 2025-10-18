@@ -1,14 +1,14 @@
+import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import httpStatus from "http-status";
 import AppError from "../../errors/AppError";
 import { sendEmail } from "../../services/email.service";
 import { getInvitationEmailTemplate } from "../../templates/invitation.template";
+import { Organization } from "../organization/organization.model";
 import { Team } from "../team/team.model";
 import { User } from "../user/user.model";
-import { Organization } from "../organization/organization.model";
 import { IInvitationAccept, IInvitationCreate } from "./invitation.interface";
 import { Invitation } from "./invitation.model";
-import bcrypt from "bcryptjs";
 
 /**
  * Generate secure temporary password
@@ -20,10 +20,8 @@ const generateTempPassword = (): string => {
   let password = "";
 
   // Ensure at least one of each required type
-  password +=
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)]; // uppercase
-  password +=
-    "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)]; // lowercase
+  password += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)]; // uppercase
+  password += "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)]; // lowercase
   password += "0123456789"[Math.floor(Math.random() * 10)]; // number
   password += "!@#$%^&*"[Math.floor(Math.random() * 8)]; // special char
 
@@ -33,7 +31,10 @@ const generateTempPassword = (): string => {
   }
 
   // Shuffle the password
-  return password.split("").sort(() => Math.random() - 0.5).join("");
+  return password
+    .split("")
+    .sort(() => Math.random() - 0.5)
+    .join("");
 };
 
 // Create and send invitation
@@ -138,7 +139,9 @@ const createInvitation = async (data: IInvitationCreate) => {
     teamName: team?.name || organization.name,
     organizationName: organization.name,
     email: email.toLowerCase(),
-    temporaryPassword: globalUser ? "Use your existing password" : temporaryPassword,
+    temporaryPassword: globalUser
+      ? "Use your existing password"
+      : temporaryPassword,
     invitationLink,
     expiresInDays: 7,
   });
@@ -170,7 +173,7 @@ const acceptInvitation = async (acceptData: IInvitationAccept) => {
 
   // Check if user already exists
   const existingUser = await User.findOne({ email: invitation.email });
-  
+
   if (!existingUser) {
     throw new AppError(
       httpStatus.NOT_FOUND,

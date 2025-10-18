@@ -353,10 +353,8 @@ class OrganizationService {
       let password = "";
 
       // Ensure at least one of each required type
-      password +=
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)];
-      password +=
-        "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)];
+      password += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)];
+      password += "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)];
       password += "0123456789"[Math.floor(Math.random() * 10)];
       password += "!@#$%^&*"[Math.floor(Math.random() * 8)];
 
@@ -366,7 +364,10 @@ class OrganizationService {
       }
 
       // Shuffle the password
-      return password.split("").sort(() => Math.random() - 0.5).join("");
+      return password
+        .split("")
+        .sort(() => Math.random() - 0.5)
+        .join("");
     };
 
     const temporaryPassword = generateTempPassword();

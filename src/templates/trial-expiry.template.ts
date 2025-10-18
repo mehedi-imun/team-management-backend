@@ -13,25 +13,28 @@ export interface TrialExpiryEmailData {
 export const getTrialExpiryWarningTemplate = (
   data: TrialExpiryEmailData
 ): { subject: string; html: string; text: string } => {
-  const { ownerName, organizationName, daysRemaining, trialEndDate, upgradeUrl } =
-    data;
+  const {
+    ownerName,
+    organizationName,
+    daysRemaining,
+    trialEndDate,
+    upgradeUrl,
+  } = data;
 
   const urgencyLevel =
-    daysRemaining === 1
-      ? "high"
-      : daysRemaining === 3
-        ? "medium"
-        : "low";
+    daysRemaining === 1 ? "high" : daysRemaining === 3 ? "medium" : "low";
   const urgencyColor =
     urgencyLevel === "high"
       ? "#ef4444"
       : urgencyLevel === "medium"
-        ? "#f59e0b"
-        : "#3b82f6";
+      ? "#f59e0b"
+      : "#3b82f6";
   const urgencyIcon =
     urgencyLevel === "high" ? "🚨" : urgencyLevel === "medium" ? "⚠️" : "📅";
 
-  const subject = `${urgencyIcon} Your trial expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"} - ${organizationName}`;
+  const subject = `${urgencyIcon} Your trial expires in ${daysRemaining} day${
+    daysRemaining === 1 ? "" : "s"
+  } - ${organizationName}`;
 
   const html = `
 <!DOCTYPE html>
@@ -40,7 +43,13 @@ export const getTrialExpiryWarningTemplate = (
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, ${urgencyColor} 0%, ${urgencyLevel === "high" ? "#dc2626" : urgencyLevel === "medium" ? "#d97706" : "#2563eb"} 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .header { background: linear-gradient(135deg, ${urgencyColor} 0%, ${
+    urgencyLevel === "high"
+      ? "#dc2626"
+      : urgencyLevel === "medium"
+      ? "#d97706"
+      : "#2563eb"
+  } 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
     .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
     .urgency-box { background: white; border: 3px solid ${urgencyColor}; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }
     .countdown { font-size: 48px; font-weight: bold; color: ${urgencyColor}; margin: 10px 0; }
@@ -68,15 +77,21 @@ export const getTrialExpiryWarningTemplate = (
       <div class="urgency-box">
         <h2 style="margin-top: 0; color: ${urgencyColor};">⏰ Time Remaining</h2>
         <div class="countdown">${daysRemaining}</div>
-        <p style="font-size: 18px; margin: 5px 0;">day${daysRemaining === 1 ? "" : "s"}</p>
+        <p style="font-size: 18px; margin: 5px 0;">day${
+          daysRemaining === 1 ? "" : "s"
+        }</p>
         <p style="color: #6b7280; margin-top: 10px;">Trial ends on <strong>${trialEndDate}</strong></p>
       </div>
 
-      ${urgencyLevel === "high" ? `
+      ${
+        urgencyLevel === "high"
+          ? `
       <div style="background: #fee2e2; border: 2px solid #ef4444; border-radius: 8px; padding: 15px; margin: 20px 0;">
         <strong style="color: #dc2626;">⚠️ URGENT:</strong> Your trial ends <strong>tomorrow</strong>! Upgrade now to avoid service interruption.
       </div>
-      ` : ""}
+      `
+          : ""
+      }
 
       <div class="info-box">
         <h3>📌 What Happens After Trial Expires?</h3>
@@ -125,7 +140,9 @@ ${urgencyIcon} Trial Expiring Soon - ${organizationName}
 
 Hi ${ownerName},
 
-Your free trial is expiring in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}!
+Your free trial is expiring in ${daysRemaining} day${
+    daysRemaining === 1 ? "" : "s"
+  }!
 
 Trial ends on: ${trialEndDate}
 
@@ -157,8 +174,13 @@ Questions? Contact our sales team.
 export const getTrialExpiredTemplate = (
   data: TrialExpiryEmailData
 ): { subject: string; html: string; text: string } => {
-  const { ownerName, organizationName, trialEndDate, upgradeUrl, featuresBlocked } =
-    data;
+  const {
+    ownerName,
+    organizationName,
+    trialEndDate,
+    upgradeUrl,
+    featuresBlocked,
+  } = data;
 
   const subject = `🔒 Your trial has expired - ${organizationName}`;
 
@@ -247,13 +269,17 @@ Your free trial has expired as of ${trialEndDate}.
 Your account is now in VIEW-ONLY mode.
 
 Features Currently Blocked:
-${featuresBlocked && featuresBlocked.length > 0 ? featuresBlocked.map((f) => `- ${f}`).join("\n") : `
+${
+  featuresBlocked && featuresBlocked.length > 0
+    ? featuresBlocked.map((f) => `- ${f}`).join("\n")
+    : `
 - Creating new teams
 - Inviting new members
 - Editing team information
 - Accessing analytics
 - Managing member roles
-`}
+`
+}
 
 What's Still Available:
 ✅ View existing teams and members (read-only)

@@ -8,7 +8,7 @@ const resetDatabase = async () => {
 
     // Get all collections
     const collections = await mongoose.connection.db?.collections();
-    
+
     if (!collections) {
       console.log("No collections found");
       process.exit(0);

@@ -49,12 +49,12 @@ const login = async (
 
   // Update last login timestamp
   user.lastLoginAt = new Date();
-  
+
   // If this is first login, record it
   if (!user.firstLogin) {
     user.firstLogin = new Date();
   }
-  
+
   await user.save();
 
   // Return user data and tokens (password excluded by toJSON transform)
