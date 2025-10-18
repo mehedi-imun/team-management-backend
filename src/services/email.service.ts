@@ -6,10 +6,22 @@ class EmailService {
 
   private async getTransporter() {
     if (!this.transporter) {
+      // Use secure: true for port 465, false for port 587
+      const isSecurePort = envConfig.SMTP_PORT === 465;
+      
+      // Debug: Log email configuration (without exposing password)
+      console.log("📧 Email Configuration:");
+      console.log(`  Host: ${envConfig.SMTP_HOST}`);
+      console.log(`  Port: ${envConfig.SMTP_PORT}`);
+      console.log(`  Secure: ${isSecurePort}`);
+      console.log(`  User: ${envConfig.SMTP_USER}`);
+      console.log(`  Password configured: ${envConfig.SMTP_PASSWORD ? 'Yes' : 'No'}`);
+      console.log(`  From: ${envConfig.EMAIL_FROM}`);
+      
       this.transporter = nodemailer.createTransport({
         host: envConfig.SMTP_HOST,
         port: envConfig.SMTP_PORT,
-        secure: false,
+        secure: isSecurePort, // true for 465, false for other ports
         auth: {
           user: envConfig.SMTP_USER,
           pass: envConfig.SMTP_PASSWORD,
@@ -87,6 +99,65 @@ class EmailService {
       return true;
     } catch (error) {
       console.error("❌ Email error:", error);
+      return false;
+    }
+  }
+
+  async sendEmailVerification(
+    to: string,
+    userName: string,
+    verificationUrl: string
+  ) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <body style="font-family: Arial, sans-serif; padding: 20px; background-color: #f7f7f7;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #4F46E5; margin: 0;">Verify Your Email</h1>
+          </div>
+          <p style="font-size: 16px; color: #333;">Hello ${userName},</p>
+          <p style="font-size: 16px; color: #333;">Thank you for registering with Team Management! Please verify your email address to activate your account.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" style="display: inline-block; padding: 15px 40px; background: #4F46E5; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">Verify Email Address</a>
+          </div>
+          <p style="font-size: 14px; color: #666;"><strong>This link will expire in 24 hours.</strong></p>
+          <p style="font-size: 14px; color: #666;">If you didn't create an account, please ignore this email.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+          <p style="font-size: 12px; color: #999; text-align: center;">Team Management System - Secure Organization Management</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const text = `
+Hello ${userName},
+
+Thank you for registering with Team Management!
+
+Please verify your email address by clicking the link below:
+${verificationUrl}
+
+This link will expire in 24 hours.
+
+If you didn't create an account, please ignore this email.
+    `;
+
+    try {
+      const transporter = await this.getTransporter();
+      if (!transporter) return false;
+
+      await transporter.sendMail({
+        from: `"Team Management" <${envConfig.EMAIL_FROM}>`,
+        to,
+        subject: "Verify Your Email Address - Team Management",
+        html,
+        text,
+      });
+      console.log(`✅ Email verification sent to ${to}`);
+      return true;
+    } catch (error) {
+      console.error("❌ Email verification error:", error);
       return false;
     }
   }

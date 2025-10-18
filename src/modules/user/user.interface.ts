@@ -15,13 +15,18 @@ export interface IUser {
 
   // Status
   isActive: boolean;
-  status?: "active" | "suspended" | "inactive"; // Virtual field based on isActive
+  status: "active" | "suspended" | "inactive" | "pending"; // Real field with default "pending"
 
   // First Login & Password Management
   mustChangePassword?: boolean; // Force password change on first login
   firstLogin?: Date; // Track first login timestamp
   invitedBy?: string; // User ID who invited this user
   invitedAt?: Date; // When they were invited
+
+  // Email Verification
+  emailVerified?: boolean; // Whether email is verified
+  emailVerificationToken?: string; // Token for email verification
+  emailVerificationExpires?: Date; // Expiry time for verification token
 
   // Password Reset
   passwordResetToken?: string;

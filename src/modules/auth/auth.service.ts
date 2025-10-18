@@ -23,6 +23,14 @@ const login = async (
     throw new AppError(httpStatus.UNAUTHORIZED, "Invalid email or password");
   }
 
+  // Check if email is verified (only for OrgOwner who self-registered)
+  if (user.role === "OrgOwner" && !user.emailVerified) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "Please verify your email address before logging in. Check your inbox for the verification link."
+    );
+  }
+
   // Check if user is active
   if (!user.isActive) {
     throw new AppError(
@@ -173,6 +181,49 @@ const register = async (data: {
   // Check if user already exists
   const existingUser = await User.findOne({ email: data.email });
   if (existingUser) {
+    // If user exists but email is not verified, allow re-registration
+    if (!existingUser.emailVerified && existingUser.status === "pending") {
+      // Generate new verification token
+      const crypto = require("crypto");
+      const verificationToken = crypto.randomBytes(32).toString("hex");
+      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      // Update user with new token and updated info
+      existingUser.name = data.name;
+      existingUser.password = data.password; // Will be hashed by pre-save hook
+      existingUser.emailVerificationToken = verificationToken;
+      existingUser.emailVerificationExpires = verificationExpires;
+      await existingUser.save();
+
+      // Get the organization
+      const organization = await Organization.findById(existingUser.organizationId);
+      if (organization) {
+        // Update organization details if changed
+        organization.name = data.organizationName;
+        organization.ownerName = data.name;
+        await organization.save();
+      }
+
+      // Resend verification email
+      const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+      await emailService.sendEmailVerification(
+        existingUser.email,
+        existingUser.name,
+        verificationUrl
+      );
+
+      return {
+        user: {
+          ...existingUser.toObject(),
+          message: "Verification email resent. Please check your email to verify your account",
+        },
+        organization,
+        accessToken: null,
+        refreshToken: null,
+      };
+    }
+
+    // If user exists and is verified, throw error
     throw new AppError(httpStatus.BAD_REQUEST, "Email already in use");
   }
 
@@ -204,13 +255,23 @@ const register = async (data: {
 
   // Create owner user account
   // NEW ROLE SYSTEM: Direct role assignment
+  // Generate email verification token
+  const crypto = require("crypto");
+  const verificationToken = crypto.randomBytes(32).toString("hex");
+  const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
   const owner = await User.create({
     name: data.name,
     email: data.email,
     password: data.password,
     organizationId: organization._id!.toString(),
     role: "OrgOwner", // Direct role: Organization Owner
-    isActive: true,
+    isActive: false, // Not active until email verified
+    status: "pending", // Pending until email verified
+    emailVerified: false,
+    emailVerificationToken: verificationToken,
+    emailVerificationExpires: verificationExpires,
+    mustChangePassword: false, // They set their own password during signup
   });
 
   // Update organization with ownerId
@@ -219,24 +280,26 @@ const register = async (data: {
   organization.ownerName = owner.name;
   await organization.save();
 
-  // Generate tokens for auto-login
-  const tokenPayload = {
-    userId: owner._id!.toString(),
-    email: owner.email,
-    role: owner.role,
-  };
+  // Send email verification link
+  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+  
+  await emailService.sendEmailVerification(
+    owner.email,
+    owner.name,
+    verificationUrl
+  );
 
-  const accessToken = generateAccessToken(tokenPayload);
-  const refreshToken = generateRefreshToken(tokenPayload);
-
-  // Send welcome email with trial info
-  await emailService.sendWelcomeEmail(owner.email, owner.name, "Owner");
+  // Note: Don't generate tokens yet - user needs to verify email first
+  // They will get tokens after email verification
 
   return {
-    user: owner,
+    user: {
+      ...owner.toObject(),
+      message: "Please check your email to verify your account",
+    },
     organization,
-    accessToken,
-    refreshToken,
+    accessToken: null, // No token until email verified
+    refreshToken: null, // No token until email verified
   };
 };
 
@@ -286,6 +349,7 @@ const setupOrganization = async (data: {
     organizationId: organization._id!.toString(),
     role: "OrgOwner", // Organization Owner role
     isActive: true,
+    status: "active", // Owner is active from setup
   });
 
   // Update organization
@@ -365,6 +429,87 @@ const forceChangePassword = async (
   };
 };
 
+// Verify email address
+const verifyEmail = async (token: string) => {
+  // Find user with matching token and not expired
+  const user = await User.findOne({
+    emailVerificationToken: token,
+    emailVerificationExpires: { $gt: new Date() },
+  });
+
+  if (!user) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid or expired verification token");
+  }
+
+  // Update user
+  user.emailVerified = true;
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpires = undefined;
+  user.isActive = true;
+  user.status = "active"; // Activate user after email verification
+  await user.save();
+
+  // Generate tokens for auto-login
+  const tokenPayload = {
+    userId: user._id!.toString(),
+    email: user.email,
+    role: user.role,
+  };
+
+  const accessToken = generateAccessToken(tokenPayload);
+  const refreshToken = generateRefreshToken(tokenPayload);
+
+  return {
+    message: "Email verified successfully! You can now login.",
+    accessToken,
+    refreshToken,
+    user: {
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      status: user.status,
+    },
+  };
+};
+
+// Resend verification email
+const resendVerificationEmail = async (email: string) => {
+  // Find user by email
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found with this email address");
+  }
+
+  // Check if already verified
+  if (user.emailVerified) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Email is already verified. You can login now.");
+  }
+
+  // Generate new verification token
+  const crypto = require("crypto");
+  const verificationToken = crypto.randomBytes(32).toString("hex");
+  const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+  // Update user with new token
+  user.emailVerificationToken = verificationToken;
+  user.emailVerificationExpires = verificationExpires;
+  await user.save();
+
+  // Send verification email
+  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+  await emailService.sendEmailVerification(
+    user.email,
+    user.name,
+    verificationUrl
+  );
+
+  return {
+    message: "Verification email sent successfully. Please check your inbox.",
+  };
+};
+
 export const AuthService = {
   login,
   refreshAccessToken,
@@ -375,4 +520,6 @@ export const AuthService = {
   setupOrganization,
   changePassword,
   forceChangePassword,
+  verifyEmail,
+  resendVerificationEmail,
 };

@@ -8,6 +8,7 @@ import {
   forgotPasswordSchema,
   loginSchema,
   registerSchema,
+  resendVerificationEmailSchema,
   resetPasswordSchema,
   setupOrganizationSchema,
 } from "./auth.validation";
@@ -37,6 +38,12 @@ router.post(
   "/reset-password",
   validateRequest(resetPasswordSchema),
   AuthController.resetPassword
+);
+router.get("/verify-email", AuthController.verifyEmail);
+router.post(
+  "/resend-verification",
+  validateRequest(resendVerificationEmailSchema),
+  AuthController.resendVerificationEmail
 );
 
 // Protected routes

@@ -408,6 +408,7 @@ class OrganizationService {
       role: "OrgOwner",
       organizationIds: [organization._id!.toString()],
       isActive: true,
+      status: "active", // Owner is always active
       mustChangePassword: true, // Force password change on first login
     });
 
@@ -721,12 +722,17 @@ class OrganizationService {
     } else {
       // Create new user
       const password = memberData.password || nanoid(12);
+      const role = memberData.role || "OrgMember";
+      
       user = await User.create({
         email: memberData.email,
         name: memberData.name,
         password,
-        role: memberData.role || "OrgMember",
+        role,
         organizationId,
+        // OrgOwner and OrgAdmin are active immediately, OrgMember is pending
+        status: role === "OrgOwner" || role === "OrgAdmin" ? "active" : "pending",
+        mustChangePassword: true, // All new members must change password
       });
     }
 
@@ -882,16 +888,22 @@ class OrganizationService {
     // Get total members count
     const totalMembers = await User.countDocuments({ organizationId });
 
-    // Get active members count
+    // Get active members count (status: "active")
     const activeMembers = await User.countDocuments({
       organizationId,
-      isActive: true,
+      status: "active",
     });
 
-    // Get pending/inactive members
+    // Get pending members count (status: "pending")
     const pendingMembers = await User.countDocuments({
       organizationId,
-      isActive: false,
+      status: "pending",
+    });
+
+    // Get inactive members count (status: "inactive")
+    const inactiveMembers = await User.countDocuments({
+      organizationId,
+      status: "inactive",
     });
 
     // Get total teams count (if team model exists)
@@ -922,7 +934,7 @@ class OrganizationService {
       totalMembers,
       activeMembers,
       pendingMembers,
-      inactiveMembers: totalMembers - activeMembers,
+      inactiveMembers,
       totalTeams,
       daysLeftInTrial,
     };

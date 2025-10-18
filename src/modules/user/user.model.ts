@@ -49,6 +49,11 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: true,
     },
+    status: {
+      type: String,
+      enum: ["active", "inactive", "pending", "suspended"],
+      default: "pending", // New users start as pending
+    },
     lastLoginAt: {
       type: Date,
     },
@@ -58,6 +63,18 @@ const userSchema = new Schema<IUser>(
     mustChangePassword: {
       type: Boolean,
       default: false,
+    },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationToken: {
+      type: String,
+      select: false,
+    },
+    emailVerificationExpires: {
+      type: Date,
+      select: false,
     },
     invitedBy: {
       type: String, // User ID who invited this user
@@ -91,11 +108,6 @@ const userSchema = new Schema<IUser>(
     },
   }
 );
-
-// Virtual field: status based on isActive
-userSchema.virtual("status").get(function () {
-  return this.isActive ? "active" : "suspended";
-});
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {

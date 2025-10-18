@@ -68,6 +68,7 @@ const createTeam = async (
           password: memberData.password,
           role: "OrgMember",
           organizationId: organizationId,
+          mustChangePassword: true, // Force password change on first login
         });
 
         // Send welcome email
@@ -80,13 +81,20 @@ const createTeam = async (
         email: memberData.email,
         name: memberData.name || user.name || "",
         role: memberData.role || "Member",
-        joinedAt: new Date(),
-        isActive: true,
+        status: "pending", // Default to pending, will be active after accepting invitation
+        invitedAt: new Date(),
+        isActive: false, // Deprecated field, but keeping for backward compatibility
       };
 
       await Team.findByIdAndUpdate(newTeam._id, {
         $push: { members: newMember },
       });
+
+      // Send team invitation email (token will be generated separately if needed)
+      // For now, just send notification that they've been added
+      console.log(
+        `📧 Team invitation should be sent to ${memberData.email} for team "${newTeam.name}"`
+      );
     }
   }
 
@@ -357,6 +365,7 @@ const addMember = async (
       password: memberData.password,
       role: "OrgMember", // Default role for team members
       organizationId: organizationId,
+      mustChangePassword: true, // Force password change on first login
     });
 
     userId = user._id.toString();
@@ -373,14 +382,20 @@ const addMember = async (
     email: memberData.email,
     name: memberData.name || user.name || "",
     role: memberData.role || "Member",
-    joinedAt: new Date(),
-    isActive: true,
+    status: "pending", // Default to pending until invitation accepted
+    invitedAt: new Date(),
+    isActive: false, // Deprecated field, keeping for backward compatibility
   };
 
   const result = await Team.findOneAndUpdate(
     { _id: teamId, organizationId },
     { $push: { members: newMember } },
     { new: true }
+  );
+
+  // Send invitation notification
+  console.log(
+    `📧 Team invitation should be sent to ${memberData.email} for team "${team.name}"`
   );
 
   // Invalidate cache

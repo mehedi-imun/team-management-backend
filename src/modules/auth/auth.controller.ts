@@ -289,6 +289,81 @@ const forceChangePassword = async (
   }
 };
 
+// Verify email
+const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token } = req.query;
+
+    if (!token || typeof token !== "string") {
+      return sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "Verification token is required",
+        data: null,
+      });
+    }
+
+    const result = await AuthService.verifyEmail(token);
+
+    // Set tokens as cookies
+    if (result.accessToken && result.refreshToken) {
+      res.cookie("accessToken", result.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 15 * 60 * 1000, // 15 minutes
+      });
+
+      res.cookie("refreshToken", result.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+    }
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: result.message,
+      data: result.user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Resend verification email
+const resendVerificationEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "Email is required",
+        data: null,
+      });
+    }
+
+    await AuthService.resendVerificationEmail(email);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Verification email sent successfully. Please check your inbox.",
+      data: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const AuthController = {
   login,
   logout,
@@ -300,4 +375,6 @@ export const AuthController = {
   setupOrganization,
   changePassword,
   forceChangePassword,
+  verifyEmail,
+  resendVerificationEmail,
 };

@@ -6,9 +6,10 @@ export interface IMember {
   name: string;
   email?: string;
   role: "TeamLead" | "Member"; // Team-specific role
+  status?: "pending" | "active" | "inactive"; // Member invitation/activation status
   joinedAt?: Date;
   invitedAt?: Date; // When they were invited
-  isActive?: boolean; // Whether member is active
+  isActive?: boolean; // Whether member is active (deprecated, use status instead)
 }
 
 export interface ITeam {

@@ -93,3 +93,10 @@ export const forceChangePasswordSchema = z.object({
       ),
   }),
 });
+
+// Resend verification email schema
+export const resendVerificationEmailSchema = z.object({
+  body: z.object({
+    email: z.string().email("Invalid email format"),
+  }),
+});

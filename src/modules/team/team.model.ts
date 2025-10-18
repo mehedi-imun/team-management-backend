@@ -7,9 +7,14 @@ const memberSchema = new Schema<IMember>(
     email: { type: String, required: true, index: true },
     name: { type: String, required: false },
     role: { type: String, required: false, default: "Member" },
+    status: {
+      type: String,
+      enum: ["pending", "active", "inactive"],
+      default: "pending",
+    },
     joinedAt: { type: Date, required: false },
     invitedAt: { type: Date, required: false },
-    isActive: { type: Boolean, default: true },
+    isActive: { type: Boolean, default: true }, // Deprecated, kept for backward compatibility
   },
   { _id: true }
 );
