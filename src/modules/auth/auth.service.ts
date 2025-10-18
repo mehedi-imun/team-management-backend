@@ -330,7 +330,10 @@ const changePassword = async (
   // Verify current password
   const isPasswordValid = await (user as any).comparePassword(currentPassword);
   if (!isPasswordValid) {
-    throw new AppError(httpStatus.UNAUTHORIZED, "Current password is incorrect");
+    throw new AppError(
+      httpStatus.UNAUTHORIZED,
+      "Current password is incorrect"
+    );
   }
 
   // Update password
@@ -357,7 +360,9 @@ const forceChangePassword = async (
   user.mustChangePassword = false; // Clear force change flag
   await user.save();
 
-  return { message: "Password changed successfully. You can now use all features." };
+  return {
+    message: "Password changed successfully. You can now use all features.",
+  };
 };
 
 export const AuthService = {

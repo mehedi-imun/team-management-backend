@@ -244,11 +244,7 @@ const setupOrganization = async (
 };
 
 // Change password (regular)
-const changePassword = async (
-  req: any,
-  res: Response,
-  next: NextFunction
-) => {
+const changePassword = async (req: any, res: Response, next: NextFunction) => {
   try {
     const { currentPassword, newPassword } = req.body;
     const userId = req.user._id;

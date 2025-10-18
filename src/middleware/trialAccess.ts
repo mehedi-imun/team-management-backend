@@ -1,8 +1,8 @@
 // Trial-based access control middleware
-import { Response, NextFunction } from "express";
-import { AuthRequest } from "./authenticate";
+import { NextFunction, Response } from "express";
 import AppError from "../errors/AppError";
 import { TrialService } from "../services/trial.service";
+import { AuthRequest } from "./authenticate";
 
 /**
  * Middleware to check if organization can access features
@@ -65,8 +65,10 @@ export const canCreateTeam = async (
 
   if (!canCreate) {
     // Check if it's trial expired or plan limit
-    const canAccessFeatures = await TrialService.canAccessFeatures(organizationId);
-    
+    const canAccessFeatures = await TrialService.canAccessFeatures(
+      organizationId
+    );
+
     if (!canAccessFeatures) {
       throw new AppError(
         403,
@@ -109,8 +111,10 @@ export const canInviteMembers = async (
 
   if (!canInvite) {
     // Check if it's trial expired or plan limit
-    const canAccessFeatures = await TrialService.canAccessFeatures(organizationId);
-    
+    const canAccessFeatures = await TrialService.canAccessFeatures(
+      organizationId
+    );
+
     if (!canAccessFeatures) {
       throw new AppError(
         403,
