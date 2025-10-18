@@ -6,6 +6,14 @@ export const memberSchema = z.object({
   email: z.string().email("Valid email required").optional(),
   name: z.string().min(1, "Member name required").optional(),
   role: z.enum(["TeamLead", "Member"]).optional(),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      "Password must contain uppercase, lowercase, and number"
+    )
+    .optional(),
 });
 
 // Approval and status: "0" | "1" | "-1" (string)
@@ -38,6 +46,14 @@ export const addMemberSchema = z.object({
     email: z.string().email("Invalid email format"),
     name: z.string().min(1, "Member name required").optional(),
     role: z.enum(["TeamLead", "Member"]).optional(),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        "Password must contain uppercase, lowercase, and number"
+      )
+      .optional(),
   }),
 });
 

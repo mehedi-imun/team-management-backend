@@ -4,6 +4,8 @@ import { Types } from "mongoose";
 import AppError from "../../errors/AppError";
 import { cacheService } from "../../services/cache.service";
 import QueryBuilder from "../../utils/queryBuilder";
+import { User } from "../user/user.model";
+import { emailService } from "../../services/email.service";
 import { IMember, ITeam } from "./team.interface";
 import { Team } from "./team.model";
 
@@ -31,6 +33,7 @@ const createTeam = async (
     organizationId,
     order,
     createdBy: userId || organizationId,
+    members: [], // Initialize empty, will add members after
   };
 
   // If org owner, auto-approve both manager and director
@@ -41,11 +44,59 @@ const createTeam = async (
 
   const newTeam = await Team.create(teamData);
 
+  // Process members if provided
+  if (data.members && Array.isArray(data.members)) {
+    for (const memberData of data.members) {
+      if (!memberData.email || !memberData.email.trim()) {
+        continue; // Skip empty emails
+      }
+
+      let user = await User.findOne({ email: memberData.email });
+
+      if (!user) {
+        // Create new user if doesn't exist
+        if (!memberData.password) {
+          throw new AppError(
+            httpStatus.BAD_REQUEST,
+            `Password is required for new member ${memberData.email}`
+          );
+        }
+
+        user = await User.create({
+          email: memberData.email,
+          name: memberData.name || memberData.email.split("@")[0],
+          password: memberData.password,
+          role: "OrgMember",
+          organizationId: organizationId,
+        });
+
+        // Send welcome email
+        await emailService.sendWelcomeEmail(user.email, user.name, user.role);
+      }
+
+      // Add member to team
+      const newMember: any = {
+        userId: user._id.toString(),
+        email: memberData.email,
+        name: memberData.name || user.name || "",
+        role: memberData.role || "Member",
+        joinedAt: new Date(),
+        isActive: true,
+      };
+
+      await Team.findByIdAndUpdate(newTeam._id, {
+        $push: { members: newMember },
+      });
+    }
+  }
+
   // Invalidate teams cache for this organization
   await cacheService.invalidatePattern(`teams:${organizationId}:*`);
   console.log(`🗑️  Cache invalidated: teams:${organizationId}:*`);
 
-  return newTeam;
+  // Return updated team with members
+  const updatedTeam = await Team.findById(newTeam._id);
+  return updatedTeam;
 };
 
 // Get all teams with search, filter, sort, pagination
@@ -264,7 +315,12 @@ const deleteMember = async (
 const addMember = async (
   teamId: string,
   organizationId: string,
-  memberData: { email: string; name?: string; role?: "TeamLead" | "Member" }
+  memberData: {
+    email: string;
+    name?: string;
+    role?: "TeamLead" | "Member";
+    password?: string;
+  }
 ) => {
   if (!Types.ObjectId.isValid(teamId))
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
@@ -281,10 +337,41 @@ const addMember = async (
     throw new AppError(httpStatus.BAD_REQUEST, "Member already in team");
   }
 
+  let userId: string | undefined;
+
+  // Check if user exists in database
+  let user = await User.findOne({ email: memberData.email });
+
+  if (!user) {
+    // Create new user if doesn't exist
+    if (!memberData.password) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Password is required for new members"
+      );
+    }
+
+    user = await User.create({
+      email: memberData.email,
+      name: memberData.name || memberData.email.split("@")[0],
+      password: memberData.password,
+      role: "OrgMember", // Default role for team members
+      organizationId: organizationId,
+    });
+
+    userId = user._id.toString();
+
+    // Send welcome email
+    await emailService.sendWelcomeEmail(user.email, user.name, user.role);
+  } else {
+    userId = user._id.toString();
+  }
+
   // Add member to team
   const newMember: any = {
+    userId: userId,
     email: memberData.email,
-    name: memberData.name || "",
+    name: memberData.name || user.name || "",
     role: memberData.role || "Member",
     joinedAt: new Date(),
     isActive: true,
