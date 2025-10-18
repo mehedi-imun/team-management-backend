@@ -7,6 +7,8 @@ export interface IMember {
   email?: string;
   role: "TeamLead" | "Member"; // Team-specific role
   joinedAt?: Date;
+  invitedAt?: Date; // When they were invited
+  isActive?: boolean; // Whether member is active
 }
 
 export interface ITeam {
@@ -20,7 +22,6 @@ export interface ITeam {
   order?: number;
   members: IMember[];
   isActive: boolean;
-  createdBy: string; // User ID who created the team
   createdAt?: Date;
   updatedAt?: Date;
 }

@@ -484,9 +484,7 @@ class OrganizationService {
         email: data.ownerEmail,
         name: data.ownerName,
         password: hashedPassword,
-        role: "Member",
-        isOrganizationOwner: false,
-        isOrganizationAdmin: false,
+        role: "OrgMember", // Will be upgraded to OrgOwner below
         managedTeamIds: [],
         status: "active",
       });
@@ -529,7 +527,7 @@ class OrganizationService {
 
     // Update user to be organization owner
     user.organizationId = organization._id;
-    user.isOrganizationOwner = true;
+    user.role = "OrgOwner";
     await user.save();
 
     // Invalidate cache
@@ -596,8 +594,7 @@ class OrganizationService {
     memberData: {
       email: string;
       name: string;
-      role?: string;
-      isOrganizationAdmin?: boolean;
+      role?: "OrgOwner" | "OrgAdmin" | "OrgMember";
       password?: string;
     }
   ): Promise<any> {
@@ -618,7 +615,7 @@ class OrganizationService {
     const belongsToOrg = currentUser.organizationId === organizationId;
     const isPlatformAdmin = ["SuperAdmin", "Admin"].includes(currentUser.role);
     const isOrgAdmin =
-      currentUser.isOrganizationOwner || currentUser.isOrganizationAdmin;
+      currentUser.role === "OrgOwner" || currentUser.role === "OrgAdmin";
 
     if (!isPlatformAdmin && (!belongsToOrg || !isOrgAdmin)) {
       throw new AppError(403, "You don't have permission to add members");
@@ -656,12 +653,7 @@ class OrganizationService {
     if (existingUser) {
       // Update existing user
       existingUser.organizationId = organizationId;
-      existingUser.role = (memberData.role || "Member") as
-        | "SuperAdmin"
-        | "Admin"
-        | "Member";
-      existingUser.isOrganizationAdmin =
-        memberData.isOrganizationAdmin || false;
+      existingUser.role = memberData.role || "OrgMember";
       await existingUser.save();
       user = existingUser;
     } else {
@@ -671,12 +663,8 @@ class OrganizationService {
         email: memberData.email,
         name: memberData.name,
         password,
-        role: (memberData.role || "Member") as
-          | "SuperAdmin"
-          | "Admin"
-          | "Member",
+        role: memberData.role || "OrgMember",
         organizationId,
-        isOrganizationAdmin: memberData.isOrganizationAdmin || false,
       });
     }
 
@@ -698,8 +686,7 @@ class OrganizationService {
     currentUserId: string,
     targetUserId: string,
     updateData: {
-      role?: string;
-      isOrganizationAdmin?: boolean;
+      role?: "OrgOwner" | "OrgAdmin" | "OrgMember";
       isActive?: boolean;
     }
   ): Promise<any> {
@@ -720,7 +707,7 @@ class OrganizationService {
     const belongsToOrg = currentUser.organizationId === organizationId;
     const isPlatformAdmin = ["SuperAdmin", "Admin"].includes(currentUser.role);
     const isOrgAdmin =
-      currentUser.isOrganizationOwner || currentUser.isOrganizationAdmin;
+      currentUser.role === "OrgOwner" || currentUser.role === "OrgAdmin";
 
     if (!isPlatformAdmin && (!belongsToOrg || !isOrgAdmin)) {
       throw new AppError(403, "You don't have permission to update members");
@@ -733,7 +720,7 @@ class OrganizationService {
     }
 
     // Prevent modifying owner
-    if (targetUser.isOrganizationOwner) {
+    if (targetUser.role === "OrgOwner") {
       throw new AppError(403, "Cannot modify organization owner");
     }
 
@@ -744,10 +731,7 @@ class OrganizationService {
 
     // Update user
     if (updateData.role !== undefined) {
-      targetUser.role = updateData.role as "SuperAdmin" | "Admin" | "Member";
-    }
-    if (updateData.isOrganizationAdmin !== undefined) {
-      targetUser.isOrganizationAdmin = updateData.isOrganizationAdmin;
+      targetUser.role = updateData.role;
     }
     if (updateData.isActive !== undefined) {
       targetUser.isActive = updateData.isActive;
@@ -787,7 +771,7 @@ class OrganizationService {
     const belongsToOrg = currentUser.organizationId === organizationId;
     const isPlatformAdmin = ["SuperAdmin", "Admin"].includes(currentUser.role);
     const isOrgAdmin =
-      currentUser.isOrganizationOwner || currentUser.isOrganizationAdmin;
+      currentUser.role === "OrgOwner" || currentUser.role === "OrgAdmin";
 
     if (!isPlatformAdmin && (!belongsToOrg || !isOrgAdmin)) {
       throw new AppError(403, "You don't have permission to remove members");
@@ -800,7 +784,7 @@ class OrganizationService {
     }
 
     // Prevent removing owner
-    if (targetUser.isOrganizationOwner) {
+    if (targetUser.role === "OrgOwner") {
       throw new AppError(403, "Cannot remove organization owner");
     }
 
@@ -811,7 +795,7 @@ class OrganizationService {
 
     // Remove user from organization
     targetUser.organizationId = undefined;
-    targetUser.isOrganizationAdmin = false;
+    targetUser.role = "OrgMember"; // Reset to default role
     await targetUser.save();
 
     // Decrement organization user count

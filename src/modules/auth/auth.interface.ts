@@ -6,8 +6,6 @@ export interface ILoginResponse {
     role: string;
     isActive: boolean;
     organizationId?: string;
-    isOrganizationOwner: boolean;
-    isOrganizationAdmin: boolean;
   };
   accessToken: string;
   refreshToken: string;

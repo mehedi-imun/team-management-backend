@@ -9,7 +9,7 @@ const createTeam = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const organizationId = req.organizationId as string;
     const userId = req.user?._id;
-    const isOrgOwner = req.user?.isOrganizationOwner || false;
+    const isOrgOwner = req.user?.role === "OrgOwner";
     const newTeam = await TeamService.createTeam(
       req.body,
       organizationId,

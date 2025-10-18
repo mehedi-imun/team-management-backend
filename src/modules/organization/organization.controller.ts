@@ -302,7 +302,7 @@ class OrganizationController {
    */
   addOrganizationMember = catchAsync(async (req: Request, res: Response) => {
     const userId = req.user?._id as string;
-    const { email, name, role, isOrganizationAdmin, password } = req.body;
+    const { email, name, role, password } = req.body;
 
     const member = await organizationService.addOrganizationMember(
       req.params.id,
@@ -310,8 +310,7 @@ class OrganizationController {
       {
         email,
         name,
-        role: role || "Member",
-        isOrganizationAdmin: isOrganizationAdmin || false,
+        role: role || "OrgMember",
         password,
       }
     );

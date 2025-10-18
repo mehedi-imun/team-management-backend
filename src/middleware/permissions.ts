@@ -5,7 +5,7 @@ import { AuthRequest } from "./authenticate";
 
 /**
  * Permission Middleware for Multi-tenant RBAC
- * Checks platform roles, organization ownership, and team management permissions
+ * Uses new role system: SuperAdmin, Admin, OrgOwner, OrgAdmin, OrgMember
  */
 
 // Check if user is a SuperAdmin (platform-level admin)
@@ -56,7 +56,7 @@ export const isOrganizationOwner = (
     throw new AppError(401, "Unauthorized");
   }
 
-  if (!req.user.isOrganizationOwner) {
+  if (req.user.role !== "OrgOwner") {
     throw new AppError(
       403,
       "Forbidden - Requires organization owner privileges"
@@ -66,7 +66,7 @@ export const isOrganizationOwner = (
   next();
 };
 
-// Check if user is an organization admin (owner or admin flag)
+// Check if user is an organization admin (owner or admin)
 export const isOrganizationAdmin = (
   req: AuthRequest,
   res: Response,
@@ -76,7 +76,7 @@ export const isOrganizationAdmin = (
     throw new AppError(401, "Unauthorized");
   }
 
-  if (!req.user.isOrganizationOwner && !req.user.isOrganizationAdmin) {
+  if (req.user.role !== "OrgOwner" && req.user.role !== "OrgAdmin") {
     throw new AppError(
       403,
       "Forbidden - Requires organization admin privileges"
@@ -109,8 +109,8 @@ export const canManageTeam = async (
     return next();
   }
 
-  // Organization admins can manage teams in their org
-  if (req.user.isOrganizationOwner || req.user.isOrganizationAdmin) {
+  // Organization owners and admins can manage teams in their org
+  if (req.user.role === "OrgOwner" || req.user.role === "OrgAdmin") {
     return next();
   }
 
@@ -171,8 +171,8 @@ export const canViewTeam = async (
     throw new AppError(403, "Cannot access teams from other organizations");
   }
 
-  // Organization admins can view all teams in their org
-  if (req.user.isOrganizationOwner || req.user.isOrganizationAdmin) {
+  // Organization owners and admins can view all teams in their org
+  if (req.user.role === "OrgOwner" || req.user.role === "OrgAdmin") {
     return next();
   }
 
@@ -202,8 +202,8 @@ export const canInviteMembers = (
   if (
     req.user.role === "SuperAdmin" ||
     (req.user.role === "Admin" && !req.user.organizationId) ||
-    req.user.isOrganizationOwner ||
-    req.user.isOrganizationAdmin
+    req.user.role === "OrgOwner" ||
+    req.user.role === "OrgAdmin"
   ) {
     return next();
   }

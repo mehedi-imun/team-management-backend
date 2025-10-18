@@ -11,7 +11,7 @@ const router = Router();
 const authorizeAdminOrOrgOwner = (req: any, res: any, next: any) => {
   const user = req.user;
   const isSuperAdminOrAdmin = ["SuperAdmin", "Admin"].includes(user?.role);
-  const isOrgOwner = user?.isOrganizationOwner === true;
+  const isOrgOwner = user?.role === "OrgOwner";
 
   if (isSuperAdminOrAdmin || isOrgOwner) {
     return next();

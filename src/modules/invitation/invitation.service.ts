@@ -106,9 +106,7 @@ const acceptInvitation = async (acceptData: IInvitationAccept) => {
     name,
     password,
     organizationId: invitation.organizationId,
-    role: "Member", // Default role
-    isOrganizationOwner: false,
-    isOrganizationAdmin: false,
+    role: "OrgMember", // Default role for invited users
     isActive: true,
   });
 

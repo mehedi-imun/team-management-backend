@@ -171,13 +171,9 @@ const getPlatformAnalytics = async () => {
   const totalUsers = await User.countDocuments();
   const superAdmins = await User.countDocuments({ role: "SuperAdmin" });
   const admins = await User.countDocuments({ role: "Admin" });
-  const members = await User.countDocuments({ role: "Member" });
-  const organizationOwners = await User.countDocuments({
-    isOrganizationOwner: true,
-  });
-  const organizationAdmins = await User.countDocuments({
-    isOrganizationAdmin: true,
-  });
+  const orgOwners = await User.countDocuments({ role: "OrgOwner" });
+  const orgAdmins = await User.countDocuments({ role: "OrgAdmin" });
+  const orgMembers = await User.countDocuments({ role: "OrgMember" });
   const activeUsers = await User.countDocuments({ status: "active" });
   const inactiveUsers = await User.countDocuments({ status: "inactive" });
 
@@ -195,9 +191,9 @@ const getPlatformAnalytics = async () => {
       totalUsers,
       superAdmins,
       admins,
-      organizationOwners,
-      organizationAdmins,
-      members,
+      orgOwners,
+      orgAdmins,
+      orgMembers,
       activeUsers,
       inactiveUsers,
     },
@@ -263,13 +259,9 @@ const getUserStats = async () => {
   const totalUsers = await User.countDocuments();
   const superAdmins = await User.countDocuments({ role: "SuperAdmin" });
   const admins = await User.countDocuments({ role: "Admin" });
-  const members = await User.countDocuments({ role: "Member" });
-  const organizationOwners = await User.countDocuments({
-    isOrganizationOwner: true,
-  });
-  const organizationAdmins = await User.countDocuments({
-    isOrganizationAdmin: true,
-  });
+  const orgOwners = await User.countDocuments({ role: "OrgOwner" });
+  const orgAdmins = await User.countDocuments({ role: "OrgAdmin" });
+  const orgMembers = await User.countDocuments({ role: "OrgMember" });
   const activeUsers = await User.countDocuments({ status: "active" });
   const inactiveUsers = await User.countDocuments({ status: "inactive" });
 
@@ -277,9 +269,9 @@ const getUserStats = async () => {
     totalUsers,
     superAdmins,
     admins,
-    organizationOwners,
-    organizationAdmins,
-    members,
+    orgOwners,
+    orgAdmins,
+    orgMembers,
     activeUsers,
     inactiveUsers,
   };
@@ -328,11 +320,11 @@ const getMyOrganizationAnalytics = async (organizationId: string) => {
   // Role distribution
   const owners = await User.countDocuments({
     organizationId,
-    isOrganizationOwner: true,
+    role: "OrgOwner",
   });
   const admins = await User.countDocuments({
     organizationId,
-    isOrganizationAdmin: true,
+    role: "OrgAdmin",
   });
   const regularMembers = totalMembers - owners - admins;
 

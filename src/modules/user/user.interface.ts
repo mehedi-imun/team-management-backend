@@ -5,12 +5,9 @@ export interface IUser {
   password: string;
   name: string;
 
-  // Simplified Role System: Only 3 platform roles
-  role: "SuperAdmin" | "Admin" | "Member";
-
-  // Organization Permissions (for customers)
-  isOrganizationOwner: boolean; // True if user owns their organization
-  isOrganizationAdmin: boolean; // True if user is org admin (helper to owner)
+  // NEW: Simplified Single Role Field
+  // 5 clear roles that cover all use cases
+  role: "SuperAdmin" | "Admin" | "OrgOwner" | "OrgAdmin" | "OrgMember";
 
   // Team Management (for managers)
   managedTeamIds?: string[]; // Array of team IDs this user manages
@@ -40,17 +37,13 @@ export interface IUserCreate {
   email: string;
   password: string;
   name: string;
-  role: "SuperAdmin" | "Admin" | "Member";
+  role: "SuperAdmin" | "Admin" | "OrgOwner" | "OrgAdmin" | "OrgMember";
   organizationId?: string; // Optional for Platform Admins
-  isOrganizationOwner?: boolean;
-  isOrganizationAdmin?: boolean;
 }
 
 export interface IUserUpdate {
   name?: string;
-  role?: "SuperAdmin" | "Admin" | "Member";
+  role?: "SuperAdmin" | "Admin" | "OrgOwner" | "OrgAdmin" | "OrgMember";
   isActive?: boolean;
-  isOrganizationOwner?: boolean;
-  isOrganizationAdmin?: boolean;
   managedTeamIds?: string[];
 }

@@ -1,7 +1,13 @@
 import { z } from "zod";
 
-// User roles enum
-export const UserRoleEnum = z.enum(["Admin", "Manager", "Director"]);
+// User roles enum - NEW 5-role system
+export const UserRoleEnum = z.enum([
+  "SuperAdmin",
+  "Admin",
+  "OrgOwner",
+  "OrgAdmin",
+  "OrgMember",
+]);
 
 // Create user schema
 export const createUserSchema = z.object({
@@ -13,6 +19,7 @@ export const createUserSchema = z.object({
       .max(100, "Password too long"),
     name: z.string().min(1, "Name is required").max(100, "Name too long"),
     role: UserRoleEnum,
+    organizationId: z.string().optional(), // Optional for platform admins
   }),
 });
 

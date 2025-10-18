@@ -30,19 +30,11 @@ const userSchema = new Schema<IUser>(
     role: {
       type: String,
       enum: {
-        values: ["SuperAdmin", "Admin", "Member"],
+        values: ["SuperAdmin", "Admin", "OrgOwner", "OrgAdmin", "OrgMember"],
         message: "{VALUE} is not a valid role",
       },
       required: [true, "Role is required"],
-      default: "Member",
-    },
-    isOrganizationOwner: {
-      type: Boolean,
-      default: false,
-    },
-    isOrganizationAdmin: {
-      type: Boolean,
-      default: false,
+      default: "OrgMember",
     },
     managedTeamIds: {
       type: [String],

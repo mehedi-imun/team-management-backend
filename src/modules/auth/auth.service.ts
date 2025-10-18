@@ -58,8 +58,6 @@ const login = async (
       role: userResponse.role,
       isActive: userResponse.isActive,
       organizationId: userResponse.organizationId,
-      isOrganizationOwner: userResponse.isOrganizationOwner,
-      isOrganizationAdmin: userResponse.isOrganizationAdmin,
     },
     accessToken,
     refreshToken,
@@ -192,15 +190,13 @@ const register = async (data: {
   });
 
   // Create owner user account
-  // Role: Member (platform level) + isOrganizationOwner: true (organization level)
+  // NEW ROLE SYSTEM: Direct role assignment
   const owner = await User.create({
     name: data.name,
     email: data.email,
     password: data.password,
     organizationId: organization._id!.toString(),
-    role: "Member", // Platform role: Member (not SuperAdmin/Admin)
-    isOrganizationOwner: true, // Organization permission: Owner of this org
-    isOrganizationAdmin: false,
+    role: "OrgOwner", // Direct role: Organization Owner
     isActive: true,
   });
 
@@ -275,9 +271,7 @@ const setupOrganization = async (data: {
     email: organization.ownerEmail!,
     password: data.password,
     organizationId: organization._id!.toString(),
-    role: "Admin", // Admin-created org owners get Admin role
-    isOrganizationOwner: true,
-    isOrganizationAdmin: true,
+    role: "OrgOwner", // Organization Owner role
     isActive: true,
   });
 

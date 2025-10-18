@@ -22,8 +22,6 @@ const seedAdmin = async () => {
       name: "Platform Super Administrator",
       role: "SuperAdmin",
       isActive: true,
-      isOrganizationOwner: false,
-      isOrganizationAdmin: false,
     });
 
     console.log("✅ SuperAdmin user created successfully:");
@@ -39,8 +37,6 @@ const seedAdmin = async () => {
       name: "Platform Administrator",
       role: "Admin",
       isActive: true,
-      isOrganizationOwner: false,
-      isOrganizationAdmin: false,
     });
 
     console.log("✅ Sample Platform Admin created:");

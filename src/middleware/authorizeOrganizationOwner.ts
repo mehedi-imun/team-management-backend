@@ -4,7 +4,7 @@ import { AuthRequest } from "./authenticate";
 
 /**
  * Middleware to authorize Organization Owners
- * Allows users with isOrganizationOwner = true
+ * Allows users with role = "OrgOwner"
  */
 export const authorizeOrganizationOwner = (
   req: AuthRequest,
@@ -15,7 +15,7 @@ export const authorizeOrganizationOwner = (
     throw new AppError(401, "Unauthorized");
   }
 
-  if (!req.user.isOrganizationOwner) {
+  if (req.user.role !== "OrgOwner") {
     throw new AppError(
       403,
       "Forbidden - Requires Organization Owner privileges"
