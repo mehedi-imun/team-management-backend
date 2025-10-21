@@ -11,6 +11,7 @@ const userSchema = new Schema<IUser>(
     organizationIds: {
       type: [String],
       default: [], // NEW: Support multiple organizations
+      index: true,
     },
     email: {
       type: String,

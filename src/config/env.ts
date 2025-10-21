@@ -58,63 +58,52 @@ const loadEnvVariables = (): EnvConfig => {
     }
   });
 
-  // Helper function to clean environment variables (remove quotes and trim)
-  const cleanEnv = (value: string | undefined): string => {
-    if (!value) return "";
-    return value.trim().replace(/^["']|["']$/g, "");
-  };
-
   // Return the validated environment variables
   return {
-    PORT: cleanEnv(process.env.PORT) || "3000",
-    DATABASE_URL: cleanEnv(process.env.DATABASE_URL)!,
-    FRONTEND_URL: cleanEnv(process.env.FRONTEND_URL)!,
-    NODE_ENV: cleanEnv(process.env.NODE_ENV) as
-      | "development"
-      | "production"
-      | "test",
+    PORT: process.env.PORT || "3000",
+    DATABASE_URL: process.env.DATABASE_URL!,
+    FRONTEND_URL: process.env.FRONTEND_URL!,
+    NODE_ENV: process.env.NODE_ENV as "development" | "production" | "test",
 
     // JWT
-    JWT_SECRET: cleanEnv(process.env.JWT_SECRET)!,
-    JWT_EXPIRES_IN: cleanEnv(process.env.JWT_EXPIRES_IN) || "15m",
-    JWT_REFRESH_SECRET: cleanEnv(process.env.JWT_REFRESH_SECRET)!,
-    JWT_REFRESH_EXPIRES_IN:
-      cleanEnv(process.env.JWT_REFRESH_EXPIRES_IN) || "7d",
+    JWT_SECRET: process.env.JWT_SECRET!,
+    JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "15m",
+    JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET!,
+    JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
 
     // Redis
-    REDIS_URL: cleanEnv(process.env.REDIS_URL) || "redis://localhost:6379",
+    REDIS_URL: process.env.REDIS_URL || "redis://localhost:6379",
 
     // Email
-    SMTP_HOST: cleanEnv(process.env.SMTP_HOST) || "smtp.gmail.com",
-    SMTP_PORT: parseInt(cleanEnv(process.env.SMTP_PORT) || "587"),
-    SMTP_USER: cleanEnv(process.env.SMTP_USER) || "",
-    SMTP_PASSWORD: cleanEnv(process.env.SMTP_PASSWORD) || "",
-    EMAIL_FROM:
-      cleanEnv(process.env.EMAIL_FROM) || "noreply@teammanagement.com",
+    SMTP_HOST: process.env.SMTP_HOST || "smtp.gmail.com",
+    SMTP_PORT: parseInt(process.env.SMTP_PORT || "587"),
+    SMTP_USER: process.env.SMTP_USER || "",
+    SMTP_PASSWORD: process.env.SMTP_PASSWORD || "",
+    EMAIL_FROM: process.env.EMAIL_FROM || "noreply@teammanagement.com",
 
     // Rate Limiting
     RATE_LIMIT_WINDOW_MS: parseInt(
-      cleanEnv(process.env.RATE_LIMIT_WINDOW_MS) || "900000"
+      process.env.RATE_LIMIT_WINDOW_MS || "900000"
     ),
     RATE_LIMIT_MAX_REQUESTS: parseInt(
-      cleanEnv(process.env.RATE_LIMIT_MAX_REQUESTS) || "100"
+      process.env.RATE_LIMIT_MAX_REQUESTS || "100"
     ),
 
     // Stripe
-    STRIPE_SECRET_KEY: cleanEnv(process.env.STRIPE_SECRET_KEY) || "",
-    STRIPE_WEBHOOK_SECRET: cleanEnv(process.env.STRIPE_WEBHOOK_SECRET) || "",
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || "",
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || "",
     STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID:
-      cleanEnv(process.env.STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID) || "",
+      process.env.STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID || "",
     STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID:
-      cleanEnv(process.env.STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID) || "",
+      process.env.STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID || "",
     STRIPE_BUSINESS_MONTHLY_PRICE_ID:
-      cleanEnv(process.env.STRIPE_BUSINESS_MONTHLY_PRICE_ID) || "",
+      process.env.STRIPE_BUSINESS_MONTHLY_PRICE_ID || "",
     STRIPE_BUSINESS_ANNUAL_PRICE_ID:
-      cleanEnv(process.env.STRIPE_BUSINESS_ANNUAL_PRICE_ID) || "",
+      process.env.STRIPE_BUSINESS_ANNUAL_PRICE_ID || "",
     STRIPE_ENTERPRISE_MONTHLY_PRICE_ID:
-      cleanEnv(process.env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID) || "",
+      process.env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID || "",
     STRIPE_ENTERPRISE_ANNUAL_PRICE_ID:
-      cleanEnv(process.env.STRIPE_ENTERPRISE_ANNUAL_PRICE_ID) || "",
+      process.env.STRIPE_ENTERPRISE_ANNUAL_PRICE_ID || "",
   };
 };
 

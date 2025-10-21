@@ -14,14 +14,14 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
     res.cookie("accessToken", result.accessToken, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "none",
-      maxAge: 15 * 60 * 1000, 
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000, // 15 minutes
     });
 
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "none",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -83,7 +83,7 @@ const refreshToken = async (
     res.cookie("accessToken", result.accessToken, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "none",
+      sameSite: "strict",
       maxAge: 15 * 60 * 1000, // 15 minutes
     });
 
@@ -174,14 +174,14 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
     res.cookie("accessToken", result.accessToken, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "none",
+      sameSite: "strict",
       maxAge: 15 * 60 * 1000, // 15 minutes
     });
 
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "none",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -218,14 +218,14 @@ const setupOrganization = async (
     res.cookie("accessToken", result.accessToken, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "none",
+      sameSite: "strict",
       maxAge: 15 * 60 * 1000, // 15 minutes
     });
 
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "none",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -310,14 +310,14 @@ const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
       res.cookie("accessToken", result.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "none",
+        sameSite: "strict",
         maxAge: 15 * 60 * 1000, // 15 minutes
       });
 
       res.cookie("refreshToken", result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "none",
+        sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
     }
@@ -379,14 +379,14 @@ const setupAccount = async (
     res.cookie("accessToken", result.accessToken, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "none",
+      sameSite: "strict",
       maxAge: 15 * 60 * 1000, // 15 minutes
     });
 
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "none",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
