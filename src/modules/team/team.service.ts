@@ -2,12 +2,20 @@
 import httpStatus from "http-status";
 import { Types } from "mongoose";
 import AppError from "../../errors/AppError";
+import { cacheService } from "../../services/cache.service";
+import { emailService } from "../../services/email.service";
 import QueryBuilder from "../../utils/queryBuilder";
+import { User } from "../user/user.model";
 import { IMember, ITeam } from "./team.interface";
 import { Team } from "./team.model";
 
 // Create a new team
-const createTeam = async (data: any) => {
+const createTeam = async (
+  data: any,
+  organizationId: string,
+  userId?: string,
+  isOrgOwner?: boolean
+) => {
   if (!data.name || !data.description) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
@@ -15,21 +23,134 @@ const createTeam = async (data: any) => {
     );
   }
 
-  const lastTeam = await Team.findOne().sort({ order: -1 });
+  // Get last team order within this organization
+  const lastTeam = await Team.findOne({ organizationId }).sort({ order: -1 });
   const order = lastTeam?.order ? lastTeam.order + 1 : 1;
 
-  const newTeam = await Team.create({
+  // Organization owners don't need approval
+  const teamData = {
     ...data,
+    organizationId,
     order,
-  });
+    createdBy: userId || organizationId,
+    members: [], // Initialize empty, will add members after
+  };
 
-  return newTeam;
+  // If org owner, auto-approve both manager and director
+  if (isOrgOwner) {
+    teamData.managerApproved = "1";
+    teamData.directorApproved = "1";
+  }
+
+  const newTeam = await Team.create(teamData);
+
+  // Process members if provided
+  if (data.members && Array.isArray(data.members)) {
+    const crypto = require("crypto");
+
+    for (const memberData of data.members) {
+      if (!memberData.email || !memberData.email.trim()) {
+        continue; // Skip empty emails
+      }
+
+      let user = await User.findOne({ email: memberData.email });
+
+      if (!user) {
+        // Create new user with setup token for invitation flow
+        const setupToken = crypto.randomBytes(32).toString("hex");
+        const verificationToken = crypto.randomBytes(32).toString("hex");
+        const tokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+        user = await User.create({
+          email: memberData.email,
+          name: memberData.name || memberData.email.split("@")[0],
+          password:
+            memberData.password || crypto.randomBytes(16).toString("hex"), // Temporary password
+          role: "OrgMember",
+          organizationId: organizationId,
+          status: "pending",
+          emailVerified: false,
+          emailVerificationToken: verificationToken,
+          emailVerificationExpires: tokenExpires,
+          setupToken: setupToken,
+          setupTokenExpires: tokenExpires,
+          mustChangePassword: true, // Force password setup
+          isActive: false,
+        });
+
+        // Get organization for email
+        const Organization =
+          require("../organization/organization.model").Organization;
+        const organization = await Organization.findById(organizationId);
+        const organizationName = organization?.name || "Your Organization";
+
+        // Send team member invitation email with setup link
+        await emailService.sendTeamMemberInvitation(
+          user.email,
+          user.name,
+          data.name, // Team name
+          organizationName,
+          "Team Admin", // Default inviter name
+          setupToken
+        );
+
+        console.log(
+          `✅ Team member invitation sent to ${user.email} with setup token`
+        );
+      }
+
+      // Add member to team
+      const newMember: any = {
+        userId: user._id.toString(),
+        email: memberData.email,
+        name: memberData.name || user.name || "",
+        role: memberData.role || "Member",
+        status: "pending", // Default to pending, will be active after accepting invitation
+        invitedAt: new Date(),
+        isActive: false, // Deprecated field, but keeping for backward compatibility
+      };
+
+      await Team.findByIdAndUpdate(newTeam._id, {
+        $push: { members: newMember },
+      });
+
+      // Send team invitation email (token will be generated separately if needed)
+      // For now, just send notification that they've been added
+      console.log(
+        `📧 Team invitation should be sent to ${memberData.email} for team "${newTeam.name}"`
+      );
+    }
+  }
+
+  // Invalidate teams cache for this organization
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+  console.log(`🗑️  Cache invalidated: teams:${organizationId}:*`);
+
+  // Return updated team with members
+  const updatedTeam = await Team.findById(newTeam._id);
+  return updatedTeam;
 };
 
 // Get all teams with search, filter, sort, pagination
-const getAllTeams = async (query: any) => {
+const getAllTeams = async (query: any, organizationId: string) => {
+  // Generate cache key based on query params and organization
+  const cacheKey = `teams:${organizationId}:all:${JSON.stringify(query)}`;
+
+  // Try to get from cache
+  const cached = await cacheService.get<{ data: ITeam[]; meta: any }>(cacheKey);
+  if (cached) {
+    console.log(`✅ Cache hit for teams (org: ${organizationId})`);
+    return cached;
+  }
+
+  console.log(
+    `❌ Cache miss for teams (org: ${organizationId}) - fetching from DB`
+  );
   const searchableFields = ["name", "members.name"];
-  const queryBuilder = new QueryBuilder<ITeam>(Team.find(), query);
+
+  // Add organization filter to base query
+  const baseQuery = Team.find({ organizationId });
+  const queryBuilder = new QueryBuilder<ITeam>(baseQuery, query);
   const teamQuery = queryBuilder
     .search(searchableFields)
     .filter()
@@ -42,21 +163,45 @@ const getAllTeams = async (query: any) => {
     queryBuilder.countTotal(),
   ]);
 
-  return { data, meta };
+  const result = { data, meta };
+
+  // Cache the result for 5 minutes
+  await cacheService.set(cacheKey, result, 300);
+
+  return result;
 };
 
 // Get single team
-const getTeamById = async (id: string) => {
+const getTeamById = async (id: string, organizationId: string) => {
   if (!Types.ObjectId.isValid(id))
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
-  return Team.findById(id);
+
+  // Try cache first
+  const cacheKey = `team:${organizationId}:${id}`;
+  const cached = await cacheService.get<ITeam>(cacheKey);
+  if (cached) {
+    console.log(`✅ Cache hit for team ${id} (org: ${organizationId})`);
+    return cached;
+  }
+
+  console.log(`❌ Cache miss for team ${id} (org: ${organizationId})`);
+  const team = await Team.findOne({ _id: id, organizationId });
+
+  // Cache for 5 minutes
+  if (team) {
+    await cacheService.set(cacheKey, team, 300);
+  }
+
+  return team;
 };
 
 // Update team
-
-const updateTeam = async (teamId: string, data: any, newMembers?: { name: string }[]) => {
-
-  // console.log("Updating team:", data)
+const updateTeam = async (
+  teamId: string,
+  organizationId: string,
+  data: any,
+  newMembers?: { name: string }[]
+) => {
   if (!Types.ObjectId.isValid(teamId)) {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
   }
@@ -65,36 +210,69 @@ const updateTeam = async (teamId: string, data: any, newMembers?: { name: string
 
   if (newMembers && newMembers.length > 0) {
     updateData.$push = {
-      members: { $each: newMembers.map(m => ({ name: m.name })) },
+      members: { $each: newMembers.map((m) => ({ name: m.name })) },
     };
   }
 
-  return Team.findByIdAndUpdate(teamId, updateData, {
-    new: true,
-    runValidators: true,
-  });
+  const result = await Team.findOneAndUpdate(
+    { _id: teamId, organizationId },
+    updateData,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  // Invalidate cache
+  await cacheService.delete(`team:${organizationId}:${teamId}`);
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+  console.log(
+    `🗑️  Cache invalidated: team:${organizationId}:${teamId} and teams:${organizationId}:*`
+  );
+
+  return result;
 };
 
-
 // Delete single team
-const deleteTeam = async (id: string) => {
+const deleteTeam = async (id: string, organizationId: string) => {
   if (!Types.ObjectId.isValid(id))
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
-  return Team.findByIdAndDelete(id);
+
+  const result = await Team.findOneAndDelete({ _id: id, organizationId });
+
+  // Invalidate cache
+  await cacheService.delete(`team:${organizationId}:${id}`);
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+  console.log(
+    `🗑️  Cache invalidated after delete: team:${organizationId}:${id}`
+  );
+
+  return result;
 };
 
 // Bulk delete teams
-const bulkDeleteTeams = async (ids: string[]) => {
+const bulkDeleteTeams = async (ids: string[], organizationId: string) => {
   ids.forEach((id) => {
     if (!Types.ObjectId.isValid(id))
       throw new AppError(httpStatus.BAD_REQUEST, `Invalid ID ${id}`);
   });
-  return Team.deleteMany({ _id: { $in: ids } });
+
+  const result = await Team.deleteMany({ _id: { $in: ids }, organizationId });
+
+  // Invalidate all cache for this organization
+  await cacheService.invalidatePattern(`team:${organizationId}:*`);
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+  console.log(
+    `🗑️  Cache invalidated after bulk delete (org: ${organizationId})`
+  );
+
+  return result;
 };
 
 // Update tri-state approval
 const updateApprovalStatus = async (
   teamId: string,
+  organizationId: string,
   field: "managerApproved" | "directorApproved",
   value: "0" | "1" | "-1"
 ) => {
@@ -102,21 +280,33 @@ const updateApprovalStatus = async (
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
   }
 
-  return Team.findByIdAndUpdate(teamId, { [field]: value }, { new: true });
+  return Team.findOneAndUpdate(
+    { _id: teamId, organizationId },
+    { [field]: value },
+    { new: true }
+  );
 };
 
 // Update order for drag & drop
-const updateTeamOrder = async (orderList: { id: string; order: number }[]) => {
+const updateTeamOrder = async (
+  orderList: { id: string; order: number }[],
+  organizationId: string
+) => {
   const ops = orderList.map((o) =>
-    Team.findByIdAndUpdate(o.id, { order: o.order })
+    Team.findOneAndUpdate({ _id: o.id, organizationId }, { order: o.order })
   );
   await Promise.all(ops);
+
+  // Invalidate cache
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+
   return true;
 };
 
 // Update a team member
 const updateMember = async (
   teamId: string,
+  organizationId: string,
   memberId: string,
   data: IMember
 ) => {
@@ -124,19 +314,223 @@ const updateMember = async (
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid ID");
 
   return Team.updateOne(
-    { _id: teamId, "members._id": memberId },
+    { _id: teamId, organizationId, "members._id": memberId },
     { $set: { "members.$": data } }
   );
 };
 
 // Delete a team member
-const deleteMember = async (teamId: string, memberId: string) => {
+const deleteMember = async (
+  teamId: string,
+  organizationId: string,
+  memberId: string
+) => {
   if (!Types.ObjectId.isValid(teamId) || !Types.ObjectId.isValid(memberId))
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid ID");
 
-  return Team.findByIdAndUpdate(teamId, {
-    $pull: { members: { _id: memberId } },
-  });
+  const result = await Team.findOneAndUpdate(
+    { _id: teamId, organizationId },
+    {
+      $pull: { members: { _id: memberId } },
+    },
+    { new: true }
+  );
+
+  // Invalidate cache
+  await cacheService.delete(`team:${organizationId}:${teamId}`);
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+
+  return result;
+};
+
+// Add a new team member
+const addMember = async (
+  teamId: string,
+  organizationId: string,
+  memberData: {
+    email: string;
+    name?: string;
+    role?: "TeamLead" | "Member";
+    password?: string;
+  },
+  inviterUser?: { name: string; email: string }
+) => {
+  if (!Types.ObjectId.isValid(teamId))
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
+
+  // Check if team exists
+  const team = await Team.findOne({ _id: teamId, organizationId });
+  if (!team) {
+    throw new AppError(httpStatus.NOT_FOUND, "Team not found");
+  }
+
+  // Get organization details for email
+  const Organization =
+    require("../organization/organization.model").Organization;
+  const organization = await Organization.findById(organizationId);
+  if (!organization) {
+    throw new AppError(httpStatus.NOT_FOUND, "Organization not found");
+  }
+
+  // Check if member already exists in team
+  const memberExists = team.members.some((m) => m.email === memberData.email);
+  if (memberExists) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Member already in team");
+  }
+
+  let userId: string | undefined;
+  let isNewUser = false;
+
+  // Check if user exists in database
+  let user = await User.findOne({ email: memberData.email });
+
+  if (!user) {
+    // Create new user with pending status
+    const crypto = require("crypto");
+    const setupToken = crypto.randomBytes(32).toString("hex");
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const tokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    user = await User.create({
+      email: memberData.email,
+      name: memberData.name || memberData.email.split("@")[0],
+      password: memberData.password || crypto.randomBytes(16).toString("hex"), // Temporary password
+      role: "OrgMember", // Default role for team members
+      organizationId: organizationId,
+      status: "pending", // Pending until they set up account
+      emailVerified: false,
+      emailVerificationToken: verificationToken,
+      emailVerificationExpires: tokenExpires,
+      setupToken: setupToken,
+      setupTokenExpires: tokenExpires,
+      mustChangePassword: true, // Force password setup
+      isActive: false,
+    });
+
+    userId = user._id.toString();
+    isNewUser = true;
+
+    // Send team member invitation email with setup link
+    const inviterName =
+      inviterUser?.name || organization.ownerName || "Your team admin";
+    await emailService.sendTeamMemberInvitation(
+      user.email,
+      user.name,
+      team.name,
+      organization.name,
+      inviterName,
+      setupToken
+    );
+
+    console.log(
+      `✅ Team member invitation sent to ${user.email} with setup token`
+    );
+  } else {
+    userId = user._id.toString();
+
+    // If user exists but not verified, resend verification
+    if (!user.emailVerified && user.status === "pending") {
+      const crypto = require("crypto");
+      const verificationToken = crypto.randomBytes(32).toString("hex");
+      const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      user.emailVerificationToken = verificationToken;
+      user.emailVerificationExpires = tokenExpires;
+      await user.save();
+
+      const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+      await emailService.sendEmailVerification(
+        user.email,
+        user.name,
+        verificationUrl
+      );
+
+      console.log(
+        `✅ Verification email resent to existing unverified user ${user.email}`
+      );
+    }
+  }
+
+  // Add member to team
+  const newMember: any = {
+    userId: userId,
+    email: memberData.email,
+    name: memberData.name || user.name || "",
+    role: memberData.role || "Member",
+    status: "pending", // Pending until they complete setup
+    invitedAt: new Date(),
+    isActive: false,
+  };
+
+  const result = await Team.findOneAndUpdate(
+    { _id: teamId, organizationId },
+    { $push: { members: newMember } },
+    { new: true }
+  );
+
+  // Invalidate cache
+  await cacheService.delete(`team:${organizationId}:${teamId}`);
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+
+  return {
+    team: result,
+    newUser: isNewUser,
+    userStatus: user.status,
+    message: isNewUser
+      ? `Invitation sent to ${memberData.email}. They will receive an email to set up their account.`
+      : `Member added to team. ${
+          user.emailVerified
+            ? "User can now access the team."
+            : "Verification email sent."
+        }`,
+  };
+};
+
+// Assign manager to team
+const assignManager = async (
+  teamId: string,
+  organizationId: string,
+  managerId: string
+) => {
+  if (!Types.ObjectId.isValid(teamId))
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid team ID");
+
+  // Check if team exists
+  const team = await Team.findOne({ _id: teamId, organizationId });
+  if (!team) {
+    throw new AppError(httpStatus.NOT_FOUND, "Team not found");
+  }
+
+  const result = await Team.findOneAndUpdate(
+    { _id: teamId, organizationId },
+    { managerId },
+    { new: true }
+  );
+
+  // Invalidate cache
+  await cacheService.delete(`team:${organizationId}:${teamId}`);
+  await cacheService.invalidatePattern(`teams:${organizationId}:*`);
+
+  return result;
+};
+
+// Get teams managed by a specific manager
+const getTeamsByManager = async (managerId: string, organizationId: string) => {
+  const cacheKey = `teams:${organizationId}:manager:${managerId}`;
+
+  // Try cache
+  const cached = await cacheService.get<ITeam[]>(cacheKey);
+  if (cached) {
+    console.log(`✅ Cache hit for manager teams (org: ${organizationId})`);
+    return cached;
+  }
+
+  const teams = await Team.find({ organizationId, managerId, isActive: true });
+
+  // Cache for 5 minutes
+  await cacheService.set(cacheKey, teams, 300);
+
+  return teams;
 };
 
 export const TeamService = {
@@ -150,4 +544,7 @@ export const TeamService = {
   updateTeamOrder,
   updateMember,
   deleteMember,
+  addMember,
+  assignManager,
+  getTeamsByManager,
 };
