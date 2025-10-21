@@ -15,14 +15,14 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
       sameSite: "none",
-      // maxAge: 15 * 60 * 1000, 
+      maxAge: 15 * 60 * 1000, 
     });
 
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
       sameSite: "none",
-      // maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     sendResponse(res, {
