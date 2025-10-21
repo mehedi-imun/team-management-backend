@@ -69,13 +69,17 @@ const loadEnvVariables = (): EnvConfig => {
     PORT: cleanEnv(process.env.PORT) || "3000",
     DATABASE_URL: cleanEnv(process.env.DATABASE_URL)!,
     FRONTEND_URL: cleanEnv(process.env.FRONTEND_URL)!,
-    NODE_ENV: cleanEnv(process.env.NODE_ENV) as "development" | "production" | "test",
+    NODE_ENV: cleanEnv(process.env.NODE_ENV) as
+      | "development"
+      | "production"
+      | "test",
 
     // JWT
     JWT_SECRET: cleanEnv(process.env.JWT_SECRET)!,
     JWT_EXPIRES_IN: cleanEnv(process.env.JWT_EXPIRES_IN) || "15m",
     JWT_REFRESH_SECRET: cleanEnv(process.env.JWT_REFRESH_SECRET)!,
-    JWT_REFRESH_EXPIRES_IN: cleanEnv(process.env.JWT_REFRESH_EXPIRES_IN) || "7d",
+    JWT_REFRESH_EXPIRES_IN:
+      cleanEnv(process.env.JWT_REFRESH_EXPIRES_IN) || "7d",
 
     // Redis
     REDIS_URL: cleanEnv(process.env.REDIS_URL) || "redis://localhost:6379",
@@ -85,7 +89,8 @@ const loadEnvVariables = (): EnvConfig => {
     SMTP_PORT: parseInt(cleanEnv(process.env.SMTP_PORT) || "587"),
     SMTP_USER: cleanEnv(process.env.SMTP_USER) || "",
     SMTP_PASSWORD: cleanEnv(process.env.SMTP_PASSWORD) || "",
-    EMAIL_FROM: cleanEnv(process.env.EMAIL_FROM) || "noreply@teammanagement.com",
+    EMAIL_FROM:
+      cleanEnv(process.env.EMAIL_FROM) || "noreply@teammanagement.com",
 
     // Rate Limiting
     RATE_LIMIT_WINDOW_MS: parseInt(

@@ -45,16 +45,16 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, Postman, or server-to-server)
       if (!origin) return callback(null, true);
-      
+
       // Check if the origin matches any allowed origin
-      const isAllowed = allowedOrigins.some(allowed => {
+      const isAllowed = allowedOrigins.some((allowed) => {
         if (!allowed) return false;
         // Remove protocol and compare
-        const cleanOrigin = origin.replace(/^https?:\/\//, '');
-        const cleanAllowed = allowed.replace(/^https?:\/\//, '');
+        const cleanOrigin = origin.replace(/^https?:\/\//, "");
+        const cleanAllowed = allowed.replace(/^https?:\/\//, "");
         return cleanOrigin === cleanAllowed || origin === allowed;
       });
-      
+
       if (isAllowed) {
         callback(null, true);
       } else {
