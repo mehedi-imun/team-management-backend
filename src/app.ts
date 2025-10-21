@@ -32,10 +32,36 @@ const limiter = rateLimit({
 });
 app.use("/api/", limiter);
 
-// CORS
+// CORS - Handle multiple frontend URLs
+const allowedOrigins = [
+  env.FRONTEND_URL?.trim(),
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://team-management-frontend-psi.vercel.app",
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: env.FRONTEND_URL,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, Postman, or server-to-server)
+      if (!origin) return callback(null, true);
+      
+      // Check if the origin matches any allowed origin
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (!allowed) return false;
+        // Remove protocol and compare
+        const cleanOrigin = origin.replace(/^https?:\/\//, '');
+        const cleanAllowed = allowed.replace(/^https?:\/\//, '');
+        return cleanOrigin === cleanAllowed || origin === allowed;
+      });
+      
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        console.warn(`CORS blocked origin: ${origin}`);
+        callback(null, false);
+      }
+    },
     credentials: true,
   })
 );
